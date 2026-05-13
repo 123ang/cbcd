@@ -1,16 +1,27 @@
 # Deploy CBCD to a VPS
 
-This guide deploys the React/Vite frontend as static files and the FastAPI backend on port `8001` behind Nginx.
+This guide deploys the React/Vite frontend as static files behind Nginx on port **3017**, and the FastAPI backend bound to **127.0.0.1:4017** (proxied at `/api`).
 
 Assumptions:
 
 - VPS OS: Ubuntu 22.04/24.04
-- Domain example: `cbcd.example.com`
-- Project folder on VPS: `/var/www/cbcd`
-- Backend listens only on localhost: `127.0.0.1:8001`
-- Public browser calls the API through Nginx at `/api`
+- Domain: **`cbcd.suntzutechnologies.com`**
+- Project folder on VPS: **`/root/projects/cbcd`**
+- Nginx listens on **`3017`** for HTTP (SPA + `/api` reverse proxy)
+- Backend listens only on localhost: **`127.0.0.1:4017`**
 
-Replace `cbcd.example.com` with your real domain.
+**Permissions:** Nginx workers and systemd often run as `www-data`. A repo under `/root` is normally not readable by `www-data`. After cloning, either:
+
+- **`chown -R www-data:www-data /root/projects/cbcd`** and **`chmod 755 /root`** (simple; consider whether tightening `/root` is acceptable), or  
+- Prefer **`/srv/cbcd`** / **`/var/www/cbcd`** with the same user if you want stricter isolation.
+
+Visitors open:
+
+```text
+http://cbcd.suntzutechnologies.com:3017/
+```
+
+(and `curl` examples below use `:3017`).
 
 ---
 
@@ -41,28 +52,34 @@ sudo apt install -y nodejs
 
 ## 2. Upload or clone the project
 
-Option A — clone from GitHub:
+Option A — clone from GitHub (path you chose):
 
 ```bash
-sudo mkdir -p /var/www
-sudo chown -R $USER:$USER /var/www
-cd /var/www
-git clone <YOUR_REPO_URL> cbcd
+sudo mkdir -p /root/projects
+sudo chown -R "$USER:$USER" /root/projects 2>/dev/null || true
+cd /root/projects
+sudo git clone <YOUR_REPO_URL> cbcd
 cd cbcd
+```
+
+If the clone is owned by root, align ownership before running the backend as `www-data` / serving files:
+
+```bash
+sudo chown -R www-data:www-data /root/projects/cbcd
 ```
 
 Option B — upload from your Mac:
 
 ```bash
 rsync -av --exclude backend/.venv --exclude frontend/node_modules --exclude frontend/dist \
-  /Users/123ang/Desktop/Websites/cbcd/ USER@YOUR_VPS_IP:/var/www/cbcd/
+  /path/to/local/cbcd/ USER@YOUR_VPS_IP:/root/projects/cbcd/
 ```
 
 Then SSH into the VPS:
 
 ```bash
 ssh USER@YOUR_VPS_IP
-cd /var/www/cbcd
+cd /root/projects/cbcd
 ```
 
 ---
@@ -70,7 +87,7 @@ cd /var/www/cbcd
 ## 3. Set up the FastAPI backend
 
 ```bash
-cd /var/www/cbcd/backend
+cd /root/projects/cbcd/backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
@@ -80,13 +97,13 @@ pip install -r requirements.txt
 Test manually:
 
 ```bash
-uvicorn main:app --host 127.0.0.1 --port 8001
+uvicorn main:app --host 127.0.0.1 --port 4017
 ```
 
 In another SSH tab:
 
 ```bash
-curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:4017/health
 ```
 
 Expected:
@@ -115,8 +132,8 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/cbcd/backend
-ExecStart=/var/www/cbcd/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8001
+WorkingDirectory=/root/projects/cbcd/backend
+ExecStart=/root/projects/cbcd/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4017
 Restart=always
 RestartSec=3
 
@@ -127,7 +144,7 @@ WantedBy=multi-user.target
 Give Nginx/systemd user ownership if needed:
 
 ```bash
-sudo chown -R www-data:www-data /var/www/cbcd/backend
+sudo chown -R www-data:www-data /root/projects/cbcd/backend
 ```
 
 Start it:
@@ -152,7 +169,7 @@ sudo journalctl -u cbcd-api -f
 Because Nginx will proxy `/api` to the backend, build the frontend with:
 
 ```bash
-cd /var/www/cbcd/frontend
+cd /root/projects/cbcd/frontend
 cat > .env.production <<'EOF'
 VITE_API_BASE=/api
 EOF
@@ -163,7 +180,7 @@ npm run build
 The built files will be in:
 
 ```bash
-/var/www/cbcd/frontend/dist
+/root/projects/cbcd/frontend/dist
 ```
 
 ---
@@ -178,10 +195,10 @@ Paste:
 
 ```nginx
 server {
-    listen 80;
-    server_name cbcd.example.com;
+    listen 3017;
+    server_name cbcd.suntzutechnologies.com;
 
-    root /var/www/cbcd/frontend/dist;
+    root /root/projects/cbcd/frontend/dist;
     index index.html;
 
     location / {
@@ -189,7 +206,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://127.0.0.1:8001/;
+        proxy_pass http://127.0.0.1:4017/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -199,20 +216,20 @@ server {
 }
 ```
 
-Important: `proxy_pass http://127.0.0.1:8001/;` has a trailing `/`. This makes `/api/health` become backend `/health`.
+Important: `proxy_pass http://127.0.0.1:4017/;` has a trailing `/`. This makes `/api/health` become backend `/health`.
 
 Enable the site:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/cbcd /etc/nginx/sites-enabled/cbcd
+sudo ln -sf /etc/nginx/sites-available/cbcd /etc/nginx/sites-enabled/cbcd
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-Test:
+Test (from anywhere that can reach the VPS):
 
 ```bash
-curl http://cbcd.example.com/api/health
+curl http://cbcd.suntzutechnologies.com:3017/api/health
 ```
 
 Expected:
@@ -221,27 +238,29 @@ Expected:
 {"ok":true,"phase":"phase_1"}
 ```
 
+**Firewall:** allow **3017** (and **80**/**443** if you add HTTPS on standard ports).
+
+```bash
+sudo ufw allow 3017/tcp
+sudo ufw reload
+```
+
 ---
 
 ## 7. Add HTTPS with Certbot
 
-Make sure your domain DNS A record points to the VPS IP first.
+Certbot’s HTTP-01 challenge usually expects **port 80** on the hostname. Options:
+
+1. Add a **`listen 80;`** server block for the same `server_name` (short-term for issuance), issue the cert, then either keep port 80 for redirect or rely on renewal hooks.  
+2. Use **`certbot certonly --dns-*`** / your DNS provider’s plugin if port 80 is not available.
+
+If you extend the nginx site with SSL on **443**:
 
 ```bash
-sudo certbot --nginx -d cbcd.example.com
+sudo certbot --nginx -d cbcd.suntzutechnologies.com
 ```
 
-Then test:
-
-```bash
-curl https://cbcd.example.com/api/health
-```
-
-Open:
-
-```text
-https://cbcd.example.com
-```
+Then visitors would use **`https://cbcd.suntzutechnologies.com`** (without `:3017` if you migrate the app to `listen 443 ssl` and drop or proxy the custom port). Adjust the `server` block after Certbot’s edits to match how you want **3017** vs **443** to behave.
 
 ---
 
@@ -250,7 +269,7 @@ https://cbcd.example.com
 If using Git:
 
 ```bash
-cd /var/www/cbcd
+cd /root/projects/cbcd
 git pull
 
 cd backend
@@ -264,7 +283,7 @@ npm run build
 sudo systemctl reload nginx
 ```
 
-If uploading from Mac with `rsync`, upload first, then run the same backend/frontend restart commands on VPS.
+If uploading with `rsync`, upload first, then run the same backend/frontend restart commands on VPS.
 
 ---
 
@@ -275,7 +294,7 @@ If uploading from Mac with `rsync`, upload first, then run the same backend/fron
 Check API through Nginx:
 
 ```bash
-curl https://cbcd.example.com/api/health
+curl http://cbcd.suntzutechnologies.com:3017/api/health
 ```
 
 If this fails, check backend:
@@ -298,7 +317,7 @@ Confirm Nginx location has:
 
 ```nginx
 location /api/ {
-    proxy_pass http://127.0.0.1:8001/;
+    proxy_pass http://127.0.0.1:4017/;
 }
 ```
 
@@ -310,19 +329,22 @@ sudo systemctl reload nginx
 
 ### Port conflict
 
-Check what is using port `8001`:
-
 ```bash
-sudo lsof -nP -iTCP:8001 -sTCP:LISTEN
+sudo lsof -nP -iTCP:3017 -sTCP:LISTEN
+sudo lsof -nP -iTCP:4017 -sTCP:LISTEN
 ```
 
-Change the backend systemd port if needed, and update Nginx `proxy_pass` to the same port.
+Align **systemd `ExecStart`** and **`proxy_pass`** if you change the backend port.
+
+### www-data cannot read `/root/projects/cbcd`
+
+Either fix ownership/path as in section 2, run the backend as **`User=root`** only if you accept that tradeoff, or move the checkout to **`/srv/cbcd`** / **`/var/www/cbcd`** and update paths in systemd and nginx.
 
 ---
 
 ## 10. Local development reminder
 
-For local Mac development, this project currently uses:
+For local development, this project commonly uses:
 
 ```env
 # frontend/.env
@@ -343,3 +365,5 @@ Run frontend locally:
 cd frontend
 npm run dev
 ```
+
+Local ports are independent of VPS **3017** / **4017**.
