@@ -10,15 +10,15 @@ ROOT = Path(__file__).parent
 SCENARIOS = ROOT / "data" / "scenarios.json"
 OUT = ROOT / "data" / "experiment_logs.csv"
 PRESETS = {
-    "Default": {"alpha": 1, "beta": 3, "gamma": 5, "delta": 10, "epsilon": 2},
-    "Distance-heavy": {"alpha": 3, "beta": 1, "gamma": 2, "delta": 10, "epsilon": 1},
-    "Safety-heavy": {"alpha": 1, "beta": 5, "gamma": 8, "delta": 12, "epsilon": 2},
+    "Default": {"alpha": 1, "beta": 3, "gamma": 5, "delta": 10, "epsilon": 2, "heuristic_weight": 1},
+    "Distance-heavy": {"alpha": 3, "beta": 1, "gamma": 2, "delta": 10, "epsilon": 1, "heuristic_weight": 1},
+    "Safety-heavy": {"alpha": 1, "beta": 5, "gamma": 8, "delta": 12, "epsilon": 2, "heuristic_weight": 1},
 }
 ALGORITHMS = [dijkstra, astar, weighted_astar, qlearning]
 FIELDS = [
     "timestamp", "scenario", "preset", "algorithm", "success", "distance", "risk_score",
-    "crowd_score", "total_cost", "time_ms", "nodes_expanded",
-    "alpha", "beta", "gamma", "delta", "epsilon"
+    "crowd_score", "total_cost", "time_ms", "nodes_expanded", "train_steps", "reached_exit", "exit_access_score",
+    "alpha", "beta", "gamma", "delta", "epsilon", "heuristic_weight"
 ]
 
 
@@ -44,6 +44,9 @@ def main():
                     "total_cost": result["total_cost"],
                     "time_ms": result["time_ms"],
                     "nodes_expanded": result["nodes_expanded"],
+                    "train_steps": result.get("train_steps"),
+                    "reached_exit": result.get("reached_exit"),
+                    "exit_access_score": result.get("exit_access_score"),
                     **weights,
                 })
     OUT.parent.mkdir(parents=True, exist_ok=True)

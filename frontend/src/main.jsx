@@ -7,20 +7,49 @@ const tools = ['empty','wall','start','exit','risk','crowd','blocked'];
 const toolLabels = {empty:'Empty',wall:'Wall',start:'Start',exit:'Exit',risk:'Risk',crowd:'Crowd',blocked:'Blocked'};
 const algorithms = ['dijkstra','astar','weighted_astar','qlearning'];
 const presets = {
-  Default: { alpha: 1, beta: 3, gamma: 5, delta: 10, epsilon: 2 },
-  'Distance-heavy': { alpha: 3, beta: 1, gamma: 2, delta: 10, epsilon: 1 },
-  'Safety-heavy': { alpha: 1, beta: 5, gamma: 8, delta: 12, epsilon: 2 }
+  Default: { alpha: 1, beta: 3, gamma: 5, delta: 10, epsilon: 2, heuristic_weight: 1 },
+  'Distance-heavy': { alpha: 3, beta: 1, gamma: 2, delta: 10, epsilon: 1, heuristic_weight: 1 },
+  'Safety-heavy': { alpha: 1, beta: 5, gamma: 8, delta: 12, epsilon: 2, heuristic_weight: 1 }
 };
 const pathColors = { dijkstra:'#2563eb', astar:'#7c3aed', weighted_astar:'#16a34a', qlearning:'#f59e0b' };
-const metricCols = ['distance','risk_score','crowd_score','total_cost','time_ms','nodes_expanded'];
-const metricLabels = {distance:'Distance',risk_score:'Risk',crowd_score:'Crowd',total_cost:'Total cost',time_ms:'Time ms',nodes_expanded:'Nodes'};
+const metricCols = ['distance','risk_score','crowd_score','exit_access_score','train_steps','nodes_expanded','time_ms','total_cost'];
+const metricLabels = {distance:'Distance',risk_score:'Risk',crowd_score:'Crowd',exit_access_score:'Exit access',train_steps:'Train steps',nodes_expanded:'Search nodes',time_ms:'Time ms',total_cost:'Total cost'};
 const speedMs = { Slow: 180, Normal: 80, Fast: 25, Instant: 0 };
 
 function makeGrid(rows=20, cols=30) { return Array.from({length:rows},()=>Array.from({length:cols},()=>({type:'empty', intensity:1}))); }
 function clone(x){ return JSON.parse(JSON.stringify(x)); }
-function defaultScenario(){ return { name:'Untitled Phase 1 Scenario', grid: makeGrid(), start:[10,3], exits:[[10,26]], weights: presets.Default, metadata:{} }; }
+function defaultScenario(){ return { name:'Custom Scenario', grid: makeGrid(), start:[10,3], exits:[[10,26]], weights: presets.Default, metadata:{} }; }
 function key(pos){ return `${pos[0]},${pos[1]}`; }
 function isDirtyScenario(s){ return s.grid.some(row=>row.some(cell=>cell.type!=='empty')) || s.exits.length!==1 || s.start[0]!==10 || s.start[1]!==3; }
+
+
+function isPassableCell(cell){ return !['wall','blocked'].includes(cell?.type); }
+function nearestEmpty(grid, r, c, exits=[]){
+  const exitKeys = new Set(exits.map(key));
+  const q=[[r,c]], seen=new Set([`${r},${c}`]);
+  while(q.length){
+    const [cr,cc]=q.shift();
+    if(grid[cr]?.[cc] && grid[cr][cc].type==='empty' && !exitKeys.has(`${cr},${cc}`)) return [cr,cc];
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      const nr=cr+dr,nc=cc+dc, k=`${nr},${nc}`;
+      if(nr>=0&&nr<grid.length&&nc>=0&&nc<grid[0].length&&!seen.has(k)){ seen.add(k); q.push([nr,nc]); }
+    }
+  }
+  return null;
+}
+function validateScenario(s){
+  if(!s.grid?.length || !s.grid[0]?.length) return 'Grid is empty.';
+  const rows=s.grid.length, cols=s.grid[0].length;
+  const inBounds=([r,c])=>r>=0&&r<rows&&c>=0&&c<cols;
+  if(!Array.isArray(s.start)||!inBounds(s.start)) return 'Start is missing or outside the grid.';
+  if(!isPassableCell(s.grid[s.start[0]][s.start[1]])) return 'Start must be on a passable empty cell.';
+  if(!Array.isArray(s.exits)||!s.exits.length) return 'Please add at least one exit before running algorithms.';
+  const badExit=s.exits.find(e=>!Array.isArray(e)||!inBounds(e)||!isPassableCell(s.grid[e[0]][e[1]]));
+  if(badExit) return `Exit ${JSON.stringify(badExit)} is invalid or blocked.`;
+  return '';
+}
+function formatCell(v){ return Array.isArray(v)?`(${v[0]},${v[1]})`:''; }
+function formatMetric(value){ return value === undefined || value === null || value === '' ? '—' : value; }
 
 function App(){
   const [scenario,setScenario]=useState(defaultScenario());
@@ -37,6 +66,7 @@ function App(){
   const [speed,setSpeed]=useState('Instant');
   const [wallDensity,setWallDensity]=useState(0.22);
   const [pathProgress,setPathProgress]=useState(Infinity);
+  const [replayKey,setReplayKey]=useState(0);
   const [history,setHistory]=useState([]);
   const [future,setFuture]=useState([]);
   const [loading,setLoading]=useState(false);
@@ -63,7 +93,7 @@ function App(){
     const maxLen = Math.max(...results.map(r=>r.path?.length||0));
     const id = setInterval(()=>setPathProgress(p=>p>=maxLen?(clearInterval(id),p):p+1), speedMs[speed]);
     return()=>clearInterval(id);
-  },[results, speed]);
+  },[results, speed, replayKey]);
 
   const visibleResults = useMemo(()=>results.filter(r=>visible[r.algorithm] && (routeFilter==='all' || r.algorithm===routeFilter)), [results, visible, routeFilter]);
   const pathMap = useMemo(()=>{
@@ -126,7 +156,11 @@ function App(){
       prev.grid[r][c]={type:'empty',intensity:1};
     } else {
       prev.exits=prev.exits.filter(e=>!(e[0]===r&&e[1]===c));
-      if(prev.start[0]===r&&prev.start[1]===c) prev.start=[0,0];
+      if(prev.start[0]===r&&prev.start[1]===c){
+        const replacement = nearestEmpty(prev.grid, r, c, prev.exits);
+        if(!replacement) return prev;
+        prev.start=replacement;
+      }
       prev.grid[r][c]=cell;
     }
     return prev;
@@ -164,19 +198,19 @@ function App(){
     });
   }
   function addHotspots(){ commit(prev=>{ const r=prev.grid.length,c=prev.grid[0].length; for(let i=Math.floor(r*.35);i<Math.floor(r*.65);i++) for(let j=Math.floor(c*.42);j<Math.floor(c*.58);j++) if(prev.grid[i][j].type==='empty') prev.grid[i][j]={type: Math.random()>.5?'risk':'crowd', intensity: 2+Math.floor(Math.random()*2)}; return prev; }); }
-  async function runSelected(){ const names=algorithms.filter(a=>selected[a]); if(!names.length) return; setLoading(true); setError(''); try{ const out=await api.compareSelected(scenario,names); setResults(out); setVisible(v=>({...v,...Object.fromEntries(out.map(r=>[r.algorithm,true]))})); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
-  async function runAll(){ setSelected(Object.fromEntries(algorithms.map(a=>[a,true]))); setLoading(true); setError(''); try{ setResults(await api.compare(scenario)); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
+  async function runSelected(){ const names=algorithms.filter(a=>selected[a]); if(!names.length) return; const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setLoading(true); setError(''); try{ const out=await api.compareSelected(scenario,names); setResults(out); setVisible(v=>({...v,...Object.fromEntries(out.map(r=>[r.algorithm,true]))})); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
+  async function runAll(){ const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setSelected(Object.fromEntries(algorithms.map(a=>[a,true]))); setLoading(true); setError(''); try{ setResults(await api.compare(scenario)); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
   async function exportResults(){ try{ await api.exportResults(scenario, results); alert('Results appended to backend/data/experiment_logs.csv'); } catch(e){ setError(String(e.message||e)); } }
   function loadScenario(idx){ const s=scenarios[idx]; if(s){ pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); } }
   function exportScenario(){ const blob=new Blob([JSON.stringify(scenario,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${scenario.name.replaceAll(' ','_')}.json`; a.click(); }
-  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ const s=JSON.parse(t); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); }); }
+  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const s=JSON.parse(t); if(!s.grid||!s.start||!s.exits) throw new Error('Scenario JSON is missing grid/start/exits.'); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setError(''); } catch(err){ setError(`Import failed: ${err.message}`); } }); }
   function toggleSort(k){ setSort(s=>s.key===k?{key:k,dir:s.dir==='asc'?'desc':'asc'}:{key:k,dir:'asc'}); }
 
   return <div className="app">
     <aside>
       <h1>CBCD Phase 1</h1><p>Risk-aware indoor navigation dashboard</p>
-      <button className="primary" onClick={runSelected} disabled={loading}>{loading?'Running...':'Run selected'}</button><button onClick={runAll} disabled={loading}>Run all</button><button onClick={()=>{setPathProgress(0); setTimeout(()=>setPathProgress(Infinity), Math.max(250, speedMs[speed]*40));}}>Replay paths</button>
-      {error && <div className="error">{error}</div>}
+      <button className="primary" onClick={runSelected} disabled={loading}>{loading?'Running...':'Run selected'}</button><button onClick={runAll} disabled={loading}>Run all</button><button onClick={()=>setReplayKey(k=>k+1)}>Replay paths</button>
+      {error && <div className="error" role="alert">{error}</div>}
       <section><h2>Algorithms</h2>{algorithms.map(a=><label className="check" key={a}><input type="checkbox" checked={selected[a]} onChange={e=>setSelected({...selected,[a]:e.target.checked})}/>{label(a)}</label>)}</section>
       <section><h2>Route overlays</h2><div className="routeFilters"><button className={routeFilter==='all'?'active':''} onClick={()=>setRouteFilter('all')}>All</button>{algorithms.map(a=><button key={a} className={routeFilter===a?'active':''} onClick={()=>setRouteFilter(a)}><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</button>)}</div><p className="hint">Use these filters when many methods overlap; route cells are highlighted instead of drawing dots inside the box.</p>{algorithms.map(a=><label className="check" key={a}><input type="checkbox" checked={visible[a]} onChange={e=>setVisible({...visible,[a]:e.target.checked})}/><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</label>)}<label>Animation speed <select aria-label="Animation speed" value={speed} onChange={e=>setSpeed(e.target.value)}>{Object.keys(speedMs).map(s=><option key={s}>{s}</option>)}</select></label></section>
       <section><h2>Built-in scenarios</h2><select aria-label="Load built-in scenario" onChange={e=>loadScenario(e.target.value)} defaultValue=""><option value="" disabled>Load scenario</option>{scenarios.map((s,i)=><option key={s.name} value={i}>{s.name}</option>)}</select></section>
@@ -207,10 +241,11 @@ function Grid({scenario, paint, beginCell, enterCell, endDrag, pathMap, mouseDow
 }
 function Comparison({results,winner,bestByMetric,weights,sort,toggleSort}){
   if(!results.length) return <div className="emptyPanel">No run yet. Use “Run selected” to generate the Phase 1 comparison table.</div>;
-  const contribution = winner ? contributors(winner, weights) : [];
+  const contribution = winner ? contributors(winner, weights).filter(([,v])=>v>0) : [];
   const sortMark=k=>sort.key===k?(sort.dir==='asc'?' ↑':' ↓'):'';
-  return <section className="results"><h2>Algorithm comparison</h2><div className="weightsLine">Weights: α={weights.alpha}, β={weights.beta}, γ={weights.gamma}, δ={weights.delta}, ε={weights.epsilon}</div>{winner && <div className="recommend"><b>Recommended:</b> {label(winner.algorithm)} — lowest total cost ({winner.total_cost}).<br/>Why: top contributors are {contribution.map(([k,v])=>`${k} ${v.toFixed(1)}`).join(', ')}.</div>}<table><thead><tr><th><button className="sortBtn" onClick={()=>toggleSort('algorithm')}>Algorithm{sortMark('algorithm')}</button></th><th>Success</th>{metricCols.map(m=><th key={m}><button className="sortBtn" onClick={()=>toggleSort(m)}>{metricLabels[m]}{sortMark(m)}</button></th>)}</tr></thead><tbody>{results.map(r=><tr key={r.algorithm} className={winner?.algorithm===r.algorithm?'win':''}><td><span className="routeKey" style={{background:pathColors[r.algorithm]}}></span>{label(r.algorithm)}</td><td>{r.success?'✓':'×'}</td>{metricCols.map(m=><td key={m} className={r.success&&Number(r[m])===bestByMetric[m]?'best':''}>{r[m]}</td>)}</tr>)}</tbody></table></section>
+  return <section className="results"><h2>Algorithm comparison</h2><div className="weightsLine">Weights: α={weights.alpha}, β={weights.beta}, γ={weights.gamma}, δ={weights.delta}, ε={weights.epsilon}; Weighted A* heuristic w={weights.heuristic_weight ?? 1}</div>{winner && <div className="recommend"><b>Recommended:</b> {label(winner.algorithm)} — lowest total cost ({winner.total_cost}), reached exit {formatCell(winner.reached_exit)}.<br/>Why: {contribution.length?`top contributors are ${contribution.map(([k,v])=>`${k} ${v.toFixed(1)}`).join(', ')}.`:'route avoided modeled risk/crowd exposure.'}</div>}<table><thead><tr><th><button className="sortBtn" onClick={()=>toggleSort('algorithm')}>Algorithm{sortMark('algorithm')}</button></th><th>Success</th><th>Reached exit</th>{metricCols.map(m=><th key={m} className="num"><button className="sortBtn" onClick={()=>toggleSort(m)}>{metricLabels[m]}{sortMark(m)}</button></th>)}</tr></thead><tbody>{results.map(r=><tr key={r.algorithm} className={winner?.algorithm===r.algorithm?'win':''} title={r.explanation||''}><td><span className="routeKey" style={{background:pathColors[r.algorithm]}}></span>{label(r.algorithm)}</td><td>{r.success?'✓':'×'}</td><td>{formatCell(r.reached_exit)}</td>{metricCols.map(m=><td key={m} className={`num ${r.success&&Number(r[m])===bestByMetric[m]?'best':''}`}>{formatMetric(r[m])}</td>)}</tr>)}</tbody></table></section>
 }
+
 function label(a){ return ({dijkstra:'Dijkstra', astar:'A*', weighted_astar:'Weighted A*', qlearning:'Q-learning'})[a]||a; }
 function contributors(r,w){ return Object.entries({distance:r.distance*w.alpha,risk:r.risk_score*w.gamma,crowd:r.crowd_score*w.beta}).sort((a,b)=>b[1]-a[1]).slice(0,3); }
 

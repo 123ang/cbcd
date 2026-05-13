@@ -38,21 +38,28 @@ def manhattan_to_nearest_exit(pos, exits):
     return min(abs(pos[0] - e[0]) + abs(pos[1] - e[1]) for e in exits) if exits else inf
 
 
+def exit_access_score(grid, path, exits):
+    if not path or not exits:
+        return 0.0
+    max_dim = max(len(grid), len(grid[0]), 1)
+    values = [manhattan_to_nearest_exit(pos, exits) / max_dim for pos in path[1:]]
+    return round(sum(values), 3)
+
+
 def cell_cost(grid, pos, exits, weights):
     cell = cell_at(grid, pos)
     typ = cell_type(cell)
     risk = intensity(cell) if typ == "risk" else 0
     crowd = intensity(cell) if typ == "crowd" else 0
     blockage = 1 if typ == "blocked" else 0
-    # Exit accessibility is a small normalized penalty for being farther from any exit.
-    max_dim = max(len(grid), len(grid[0]), 1)
-    exit_access = manhattan_to_nearest_exit(pos, exits) / max_dim
+    # Do not add exit_access per step; otherwise it overlaps with the A* heuristic
+    # and makes baseline comparisons harder to defend. Exit access is reported
+    # separately by path_metrics.
     return (
         weights.alpha * 1
         + weights.beta * crowd
         + weights.gamma * risk
         + weights.delta * blockage
-        + weights.epsilon * exit_access
     )
 
 
@@ -75,6 +82,7 @@ def path_metrics(grid, path, exits, weights):
         "risk_score": risk,
         "crowd_score": crowd,
         "total_cost": round(total, 3),
+        "exit_access_score": exit_access_score(grid, path, exits),
     }
 
 

@@ -80,8 +80,9 @@ def export_results(payload: dict):
     scenario_name = payload.get("scenario_name", "Untitled")
     fieldnames = [
         "timestamp", "scenario", "algorithm", "success", "distance", "risk_score",
-        "crowd_score", "total_cost", "time_ms", "nodes_expanded",
-        "alpha", "beta", "gamma", "delta", "epsilon"
+        "crowd_score", "total_cost", "time_ms", "nodes_expanded", "train_steps",
+        "reached_exit", "exit_access_score",
+        "alpha", "beta", "gamma", "delta", "epsilon", "heuristic_weight"
     ]
     exists = EXPERIMENT_LOG.exists()
     with EXPERIMENT_LOG.open("a", newline="") as fh:
@@ -101,11 +102,15 @@ def export_results(payload: dict):
                 "total_cost": row.get("total_cost"),
                 "time_ms": row.get("time_ms"),
                 "nodes_expanded": row.get("nodes_expanded"),
+                "train_steps": row.get("train_steps"),
+                "reached_exit": row.get("reached_exit"),
+                "exit_access_score": row.get("exit_access_score"),
                 "alpha": weights.get("alpha"),
                 "beta": weights.get("beta"),
                 "gamma": weights.get("gamma"),
                 "delta": weights.get("delta"),
                 "epsilon": weights.get("epsilon"),
+                "heuristic_weight": weights.get("heuristic_weight", 1),
             })
     return {"saved": True, "path": str(EXPERIMENT_LOG), "rows": len(rows)}
 

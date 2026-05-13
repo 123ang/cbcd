@@ -56,13 +56,15 @@ The Phase 1 model uses five key factors:
 Cost model:
 
 ```text
-cell_cost = α·distance + β·crowd + γ·risk + δ·blockage + ε·exit_access
+cell_cost = α·distance + β·crowd + γ·risk + δ·blockage
+
+exit_access_score is reported separately as a path-level explainability metric.
 ```
 
 Default weights:
 
 ```text
-α = 1, β = 3, γ = 5, δ = 10, ε = 2
+α = 1, β = 3, γ = 5, δ = 10, ε = 2 (reported exit-access weighting), Weighted A* heuristic weight = 1
 ```
 
 ---
@@ -94,18 +96,18 @@ Observed winner count by lowest total cost:
 | Algorithm | Number of winning cases |
 |---|---:|
 | Weighted A\* | 11 |
-| Dijkstra | 4 |
-| A\* | 3 |
+| Dijkstra | 7 |
+| A\* | 0 |
 | Q-learning | 0 |
 
 Average computation time from current experiment log:
 
 | Algorithm | Average time |
 |---|---:|
-| A\* | ~0.122 ms |
-| Dijkstra | ~0.710 ms |
-| Weighted A\* | ~0.855 ms |
-| Q-learning | ~151.395 ms |
+| A\* | ~0.130 ms |
+| Dijkstra | ~0.749 ms |
+| Weighted A\* | ~0.677 ms |
+| Q-learning | ~155.858 ms |
 
 Interpretation:
 
@@ -233,7 +235,9 @@ Suggested subsections:
 Include the cost formula clearly:
 
 ```text
-cell_cost = α·distance + β·crowd + γ·risk + δ·blockage + ε·exit_access
+cell_cost = α·distance + β·crowd + γ·risk + δ·blockage
+
+exit_access_score is reported separately as a path-level explainability metric.
 ```
 
 ### 5. Experimental Design

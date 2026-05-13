@@ -40,7 +40,8 @@ def _search(req, algorithm: str, weighted: bool = False, heuristic: bool = False
                 dist[nb_t] = new_g
                 prev[nb_t] = cur
                 h = manhattan_to_nearest_exit(nb, req.exits) if heuristic else 0
-                priority = new_g + (req.weights.alpha * h if weighted else h)
+                heuristic_weight = req.weights.heuristic_weight if weighted else 1
+                priority = new_g + heuristic_weight * h
                 heapq.heappush(pq, (priority, nb_t))
 
     path = reconstruct(prev, req.start, list(goal)) if goal else []
@@ -56,6 +57,12 @@ def _search(req, algorithm: str, weighted: bool = False, heuristic: bool = False
         time_ms=round((time.perf_counter() - started) * 1000, 3),
         nodes_expanded=nodes,
         weights=req.weights,
+        reached_exit=path[-1] if path else None,
+        exit_access_score=metrics.get("exit_access_score"),
+        explanation=(
+            f"Reached exit {path[-1]} among {len(req.exits)} configured exit(s)."
+            if path else "No reachable exit found."
+        ),
     )
 
 
@@ -172,7 +179,10 @@ def qlearning(req):
             break
 
     success = bool(path and tuple(path[-1]) in exits)
+    failure_reason = None
+    partial_path = path
     if not success:
+        failure_reason = "Greedy policy reconstruction looped, got stuck, or did not reach an exit."
         path = []
     metrics = path_metrics(req.grid, path, req.exits, req.weights)
     q_dir = Path(__file__).resolve().parents[1] / "data" / "q_tables"
@@ -187,7 +197,16 @@ def qlearning(req):
         crowd_score=metrics["crowd_score"],
         total_cost=metrics["total_cost"],
         time_ms=round((time.perf_counter() - started) * 1000, 3),
-        nodes_expanded=nodes,
+        nodes_expanded=len(path) if success else len(partial_path),
         weights=req.weights,
-        explanation=f"Q-learning trained {episodes} episodes with epsilon-greedy exploration; Q-table persisted by scenario hash.",
+        reached_exit=path[-1] if path else None,
+        train_steps=nodes,
+        exit_access_score=metrics.get("exit_access_score"),
+        explanation=(
+            f"Q-learning with potential-based reward shaping trained {episodes} episodes "
+            f"({nodes} training steps); Q-table persisted by scenario hash."
+            if success else
+            f"Q-learning with potential-based reward shaping trained {episodes} episodes "
+            f"({nodes} training steps) but failed: {failure_reason}"
+        ),
     )
