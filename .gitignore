@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+
+# Node / Vite
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Generated experiment artifacts
+backend/data/q_tables/
+
+# OS / editor
+.DS_Store
+.cursor/
+.vscode/
