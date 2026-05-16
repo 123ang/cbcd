@@ -16,3 +16,5 @@ backend/data/q_tables/
 .DS_Store
 .cursor/
 .vscode/
+article/
+ang_article/
