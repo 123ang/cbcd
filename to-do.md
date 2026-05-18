@@ -36,6 +36,7 @@ Do these in order — each step has something demoable at the end.
 
 > Implementation note (2026-05-12): Phase 1 code now includes real Q-learning, comparison/export endpoints, S1–S6 scenarios, experiment harness, and frontend comparison controls. Phase 2 remains parked.
 > Cursor handoff polish: recursive division, error boundary, generated-file ignore rules, and backend scenario tests have been added.
+> Stage A-C note (2026-05-18): App now includes status cards, Dijkstra baseline delta/reduction evidence fields, and a separate Floor Plan Planning tab with image/PDF manual overlay tracing. Phase 2 YOLO remains parked.
 
 ---
 
@@ -314,16 +315,16 @@ Save each scenario as JSON in `backend/data/scenarios.json`.
 
 ### 7.2 Metrics to log per run (proposal §15)
 
-- [ ] Route distance
-- [ ] Risk exposure score
-- [ ] Crowd exposure score
-- [ ] Total route cost
-- [ ] Computation time (ms)
-- [ ] Success rate (reaches an exit y/n)
-- [ ] Route safety improvement %
+- [x] Route distance
+- [x] Risk exposure score
+- [x] Crowd exposure score
+- [x] Total route cost
+- [x] Computation time (ms)
+- [x] Success rate (reaches an exit y/n)
+- [x] Route safety improvement %
 - [ ] Crowd classification accuracy (vs manual count)
 - [ ] System usability (short rubric / questionnaire)
-- [ ] Decision explainability (does the panel state the dominant factor?)
+- [x] Decision explainability (does the panel state the dominant factor?)
 
 Formula reminder:
 

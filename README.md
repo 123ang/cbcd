@@ -13,18 +13,21 @@ Phase 1 is a working React + FastAPI prototype for:
 
 ## Phase 1 features included
 
+- Top-level workspaces for **Scenario Builder** and **Floor Plan Planning**.
 - Grid map editor with Empty, Wall, Start, Exit, Risk, Crowd, and Blocked cells.
+- Manual floor-plan overlay planning with PNG/JPG upload, PDF page rendering, opacity/fit controls, and scenario JSON preservation.
 - Adjustable risk/crowd intensity levels 1–3.
 - Weight controls for `alpha`, `beta`, `gamma`, `delta`, `epsilon`.
 - Backend endpoints for Dijkstra, A*, Weighted A*, real Q-learning, selected comparison, result export, and scenario I/O.
 - Q-learning uses epsilon-greedy training, the proposal reward table, deterministic scenario seeding, and persisted Q-tables under `backend/data/q_tables/`.
 - Built-in demo scenarios S1–S6 in `backend/data/scenarios.json`.
-- Comparison table with distance, risk, crowd, total cost, time, nodes expanded, best metric highlights, and winning row.
+- Comparison table with distance, risk, crowd, total cost, time, nodes expanded, delta vs Dijkstra, risk/crowd reduction percentages, best metric highlights, and winning row.
 - Route overlay toggles, selected-algorithm execution, replay animation speed, and sortable comparison table.
 - Undo/redo, grid resize with 80×80 cap, random wall/risk-corridor/hotspot generators, clear walls/results controls, keyboard shortcuts.
 - Recommendation panel that explains top cost contributors.
 - Experiment harness writes `backend/data/experiment_logs.csv` for S1–S6 × three weight presets.
 - Academic Phase 1 notes in `docs/phase1_academic_notes.md` and `docs/risk_factor_definition_table.md`.
+- Public-domain manual overlay test asset: `frontend/public/sample_floorplan_wikimedia.jpg`, sourced from Wikimedia Commons.
 
 ## Run backend
 

@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { api } from './api/navigationApi';
 import './styles.css';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const tools = ['empty','wall','start','exit','risk','crowd','blocked'];
 const toolLabels = {empty:'Empty',wall:'Wall',start:'Start',exit:'Exit',risk:'Risk',crowd:'Crowd',blocked:'Blocked'};
@@ -12,18 +16,40 @@ const presets = {
   'Safety-heavy': { alpha: 1, beta: 5, gamma: 8, delta: 12, epsilon: 2, heuristic_weight: 1 }
 };
 const pathColors = { dijkstra:'#2563eb', astar:'#7c3aed', weighted_astar:'#16a34a', qlearning:'#f59e0b' };
-const metricCols = ['distance','risk_score','crowd_score','exit_access_score','train_steps','nodes_expanded','time_ms','total_cost'];
-const metricLabels = {distance:'Distance',risk_score:'Risk',crowd_score:'Crowd',exit_access_score:'Exit access',train_steps:'Train steps',nodes_expanded:'Search nodes',time_ms:'Time ms',total_cost:'Total cost'};
+const metricCols = [
+  'distance','delta_distance_vs_dijkstra','risk_score','delta_risk_vs_dijkstra',
+  'risk_reduction_pct','crowd_score','crowd_reduction_pct','exit_access_score',
+  'train_steps','nodes_expanded','time_ms','total_cost'
+];
+const metricLabels = {
+  distance:'Distance',
+  delta_distance_vs_dijkstra:'Δ distance',
+  risk_score:'Risk',
+  delta_risk_vs_dijkstra:'Δ risk',
+  risk_reduction_pct:'Risk reduction',
+  crowd_score:'Crowd',
+  crowd_reduction_pct:'Crowd reduction',
+  exit_access_score:'Exit access',
+  train_steps:'Train steps',
+  nodes_expanded:'Search nodes',
+  time_ms:'Time ms',
+  total_cost:'Total cost'
+};
+const higherIsBetter = new Set(['risk_reduction_pct','crowd_reduction_pct']);
 const speedMs = { Slow: 180, Normal: 80, Fast: 25, Instant: 0 };
+const cellSize = 24;
+const cellGap = 2;
+const sampleFloorPlanUrl = '/sample_floorplan_wikimedia.jpg';
+const sampleFloorPlanSource = 'https://commons.wikimedia.org/wiki/File:Sample_Floorplan.jpg';
 
 function makeGrid(rows=20, cols=30) { return Array.from({length:rows},()=>Array.from({length:cols},()=>({type:'empty', intensity:1}))); }
 function clone(x){ return JSON.parse(JSON.stringify(x)); }
 function defaultScenario(){ return { name:'Custom Scenario', grid: makeGrid(), start:[10,3], exits:[[10,26]], weights: presets.Default, metadata:{} }; }
 function key(pos){ return `${pos[0]},${pos[1]}`; }
 function isDirtyScenario(s){ return s.grid.some(row=>row.some(cell=>cell.type!=='empty')) || s.exits.length!==1 || s.start[0]!==10 || s.start[1]!==3; }
-
-
+function floorPlanOf(s){ return s.metadata?.floor_plan || null; }
 function isPassableCell(cell){ return !['wall','blocked'].includes(cell?.type); }
+
 function nearestEmpty(grid, r, c, exits=[]){
   const exitKeys = new Set(exits.map(key));
   const q=[[r,c]], seen=new Set([`${r},${c}`]);
@@ -37,6 +63,7 @@ function nearestEmpty(grid, r, c, exits=[]){
   }
   return null;
 }
+
 function validateScenario(s){
   if(!s.grid?.length || !s.grid[0]?.length) return 'Grid is empty.';
   const rows=s.grid.length, cols=s.grid[0].length;
@@ -48,8 +75,48 @@ function validateScenario(s){
   if(badExit) return `Exit ${JSON.stringify(badExit)} is invalid or blocked.`;
   return '';
 }
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function blobToDataUrl(blob){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function imageDimensions(dataUrl){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({});
+    img.src = dataUrl;
+  });
+}
+
 function formatCell(v){ return Array.isArray(v)?`(${v[0]},${v[1]})`:''; }
-function formatMetric(value){ return value === undefined || value === null || value === '' ? '—' : value; }
+function formatNumber(value){
+  const n = Number(value);
+  if(!Number.isFinite(n)) return '—';
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+}
+function formatMetric(metric, value){
+  if(value === undefined || value === null || value === '') return '—';
+  const text = formatNumber(value);
+  if(text === '—') return text;
+  if(metric.endsWith('_pct')) return `${text}%`;
+  if(metric.startsWith('delta_') && Number(value) > 0) return `+${text}`;
+  return text;
+}
 
 function App(){
   const [scenario,setScenario]=useState(defaultScenario());
@@ -71,9 +138,14 @@ function App(){
   const [future,setFuture]=useState([]);
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState('');
+  const [notice,setNotice]=useState('');
   const [mouseDown,setMouseDown]=useState(false);
   const [lastPainted,setLastPainted]=useState(null);
   const [activeDrag,setActiveDrag]=useState(null);
+  const [activeTab,setActiveTab]=useState('builder');
+  const [floorBusy,setFloorBusy]=useState(false);
+  const [activePdf,setActivePdf]=useState(null);
+
   useEffect(()=>{ api.loadScenarios().then(setScenarios).catch(()=>{}); },[]);
   useEffect(()=>{
     const onKey=(e)=>{
@@ -95,23 +167,53 @@ function App(){
     return()=>clearInterval(id);
   },[results, speed, replayKey]);
 
+  const floorPlan = floorPlanOf(scenario);
   const visibleResults = useMemo(()=>results.filter(r=>visible[r.algorithm] && (routeFilter==='all' || r.algorithm===routeFilter)), [results, visible, routeFilter]);
   const pathMap = useMemo(()=>{
     const m={}; visibleResults.forEach(r=>r.path?.forEach((p,i)=>{ if(i>0 && i<r.path.length-1 && i<=pathProgress) (m[key(p)] ||= []).push(r.algorithm); })); return m;
   },[visibleResults, pathProgress]);
   const winner = useMemo(()=>results.filter(r=>r.success).sort((a,b)=>a.total_cost-b.total_cost)[0], [results]);
   const bestByMetric = useMemo(()=>{
-    const out={}; metricCols.forEach(metric=>{ const vals=results.filter(r=>r.success).map(r=>Number(r[metric])); out[metric]=vals.length?Math.min(...vals):null; }); return out;
+    const out={};
+    metricCols.forEach(metric=>{
+      const vals=results.filter(r=>r.success && r[metric] !== undefined && r[metric] !== null).map(r=>Number(r[metric])).filter(Number.isFinite);
+      out[metric]=vals.length ? (higherIsBetter.has(metric) ? Math.max(...vals) : Math.min(...vals)) : null;
+    });
+    return out;
   },[results]);
   const sortedResults = useMemo(()=>{
     const dir = sort.dir==='asc'?1:-1;
-    return [...results].sort((a,b)=>String(sort.key)==='algorithm'?label(a.algorithm).localeCompare(label(b.algorithm))*dir:(Number(a[sort.key])-Number(b[sort.key]))*dir);
+    return [...results].sort((a,b)=>{
+      if(String(sort.key)==='algorithm') return label(a.algorithm).localeCompare(label(b.algorithm))*dir;
+      const av = a[sort.key] === null || a[sort.key] === undefined ? Infinity : Number(a[sort.key]);
+      const bv = b[sort.key] === null || b[sort.key] === undefined ? Infinity : Number(b[sort.key]);
+      return (av-bv)*dir;
+    });
   },[results, sort]);
 
   function pushHistory(prev){ setHistory(h=>[...h.slice(-49), clone(prev)]); setFuture([]); }
-  function commit(updater){ setScenario(prev=>{ pushHistory(prev); const next=updater(clone(prev)); setRows(next.grid.length); setCols(next.grid[0].length); return next; }); setResults([]); }
-  function undo(){ setHistory(h=>{ if(!h.length) return h; const prev=h[h.length-1]; setFuture(f=>[clone(scenario),...f]); setScenario(prev); setResults([]); return h.slice(0,-1); }); }
-  function redo(){ setFuture(f=>{ if(!f.length) return f; const next=f[0]; pushHistory(scenario); setScenario(next); setResults([]); return f.slice(1); }); }
+  function commit(updater, clear=true){
+    setScenario(prev=>{
+      pushHistory(prev);
+      const next=updater(clone(prev));
+      setRows(next.grid.length);
+      setCols(next.grid[0].length);
+      return next;
+    });
+    if(clear) setResults([]);
+  }
+  function patchFloorPlan(patch, { clear=false, record=false } = {}){
+    setScenario(prev=>{
+      if(record) pushHistory(prev);
+      const next=clone(prev);
+      next.metadata = {...(next.metadata || {})};
+      next.metadata.floor_plan = {...(next.metadata.floor_plan || {}), ...patch};
+      return next;
+    });
+    if(clear) setResults([]);
+  }
+  function undo(){ setHistory(h=>{ if(!h.length) return h; const prev=h[h.length-1]; setFuture(f=>[clone(scenario),...f]); setScenario(prev); setRows(prev.grid.length); setCols(prev.grid[0].length); setResults([]); return h.slice(0,-1); }); }
+  function redo(){ setFuture(f=>{ if(!f.length) return f; const next=f[0]; pushHistory(scenario); setScenario(next); setRows(next.grid.length); setCols(next.grid[0].length); setResults([]); return f.slice(1); }); }
   function beginCell(r,c){
     const isStart=scenario.start[0]===r&&scenario.start[1]===c;
     const isExit=scenario.exits.some(e=>e[0]===r&&e[1]===c);
@@ -165,11 +267,11 @@ function App(){
     }
     return prev;
   }
-  function resizeGrid(){ const r=Math.min(80,Math.max(5,Number(rows)||20)); const c=Math.min(80,Math.max(5,Number(cols)||30)); if(isDirtyScenario(scenario) && !confirm('Resize grid and clear current map?')) return; commit(()=>({...defaultScenario(), grid: makeGrid(r,c), start:[Math.floor(r/2),2], exits:[[Math.floor(r/2),c-3]], name:`${r}×${c} scenario`})); }
-  function resizePreset(r,c){ setRows(r); setCols(c); if(!isDirtyScenario(scenario) || confirm('Resize grid and clear current map?')) commit(()=>({...defaultScenario(), grid: makeGrid(r,c), start:[Math.floor(r/2),2], exits:[[Math.floor(r/2),c-3]], name:`${r}×${c} scenario`})); }
+  function resizeGrid(){ const r=Math.min(80,Math.max(5,Number(rows)||20)); const c=Math.min(80,Math.max(5,Number(cols)||30)); if(isDirtyScenario(scenario) && !confirm('Resize grid and clear current map?')) return; commit(()=>({...defaultScenario(), grid: makeGrid(r,c), start:[Math.floor(r/2),2], exits:[[Math.floor(r/2),c-3]], name:`${r}×${c} scenario`, metadata: scenario.metadata || {}})); }
+  function resizePreset(r,c){ setRows(r); setCols(c); if(!isDirtyScenario(scenario) || confirm('Resize grid and clear current map?')) commit(()=>({...defaultScenario(), grid: makeGrid(r,c), start:[Math.floor(r/2),2], exits:[[Math.floor(r/2),c-3]], name:`${r}×${c} scenario`, metadata: scenario.metadata || {}})); }
   function clearResults(){ setResults([]); }
   function clearWalls(){ commit(prev=>{ prev.grid=prev.grid.map(row=>row.map(cell=>cell.type==='wall'||cell.type==='blocked'?{type:'empty',intensity:1}:cell)); return prev; }); }
-  function clearBoard(){ commit(()=>defaultScenario()); setRows(20); setCols(30); }
+  function clearBoard(){ commit(()=>defaultScenario()); setRows(20); setCols(30); setActivePdf(null); }
   function generateRandom(){ commit(prev=>{ const r=prev.grid.length,c=prev.grid[0].length; prev.grid=makeGrid(r,c); for(let i=0;i<r;i++) for(let j=0;j<c;j++){ if(Math.random()<wallDensity && !(i===prev.start[0]&&j===prev.start[1]) && !prev.exits.some(e=>e[0]===i&&e[1]===j)) prev.grid[i][j]={type:'wall',intensity:1}; } return prev; }); }
   function generateCorridor(){ commit(prev=>{ const r=prev.grid.length,c=prev.grid[0].length; prev.grid=makeGrid(r,c); const mid=Math.floor(r/2); for(let i=2;i<r-2;i++){ if(i!==mid) prev.grid[i][Math.floor(c/2)]={type:'wall',intensity:1}; } for(let j=Math.floor(c/3);j<Math.floor(c*2/3);j++) prev.grid[mid][j]={type:'risk',intensity:3}; return prev; }); }
   function generateRecursive(skew='balanced'){
@@ -198,19 +300,135 @@ function App(){
     });
   }
   function addHotspots(){ commit(prev=>{ const r=prev.grid.length,c=prev.grid[0].length; for(let i=Math.floor(r*.35);i<Math.floor(r*.65);i++) for(let j=Math.floor(c*.42);j<Math.floor(c*.58);j++) if(prev.grid[i][j].type==='empty') prev.grid[i][j]={type: Math.random()>.5?'risk':'crowd', intensity: 2+Math.floor(Math.random()*2)}; return prev; }); }
-  async function runSelected(){ const names=algorithms.filter(a=>selected[a]); if(!names.length) return; const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setLoading(true); setError(''); try{ const out=await api.compareSelected(scenario,names); setResults(out); setVisible(v=>({...v,...Object.fromEntries(out.map(r=>[r.algorithm,true]))})); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
-  async function runAll(){ const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setSelected(Object.fromEntries(algorithms.map(a=>[a,true]))); setLoading(true); setError(''); try{ setResults(await api.compare(scenario)); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
-  async function exportResults(){ try{ await api.exportResults(scenario, results); alert('Results appended to backend/data/experiment_logs.csv'); } catch(e){ setError(String(e.message||e)); } }
-  function loadScenario(idx){ const s=scenarios[idx]; if(s){ pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); } }
+
+  async function renderPdfBytes(fileName, bytes, pageNumber=1){
+    setFloorBusy(true); setError(''); setNotice('');
+    try{
+      const task = pdfjsLib.getDocument({ data: new Uint8Array(bytes.slice(0)) });
+      const pdf = await task.promise;
+      const safePage = Math.min(Math.max(Number(pageNumber)||1, 1), pdf.numPages);
+      const page = await pdf.getPage(safePage);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(2, Math.max(1, 1200 / baseViewport.width));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      const dataUrl = canvas.toDataURL('image/png');
+      const dims = await imageDimensions(dataUrl);
+      patchFloorPlan({
+        source_type: 'pdf',
+        name: fileName,
+        rendered_image_data_url: dataUrl,
+        pdf_page: safePage,
+        pdf_page_count: pdf.numPages,
+        opacity: floorPlan?.opacity ?? 0.55,
+        fit_mode: floorPlan?.fit_mode ?? 'contain',
+        rendered_width: dims.width,
+        rendered_height: dims.height
+      }, { clear: true, record: true });
+      await pdf.destroy();
+      setActiveTab('floor');
+      setNotice(`Rendered ${fileName}, page ${safePage} of ${pdf.numPages}.`);
+    } catch(err){
+      setError(`PDF render failed: ${err.message || err}`);
+    } finally {
+      setFloorBusy(false);
+    }
+  }
+
+  async function loadFloorImage(name, dataUrl, extra={}){
+    const dims = await imageDimensions(dataUrl);
+    patchFloorPlan({
+      source_type: extra.source_type || 'image',
+      name,
+      rendered_image_data_url: dataUrl,
+      pdf_page: extra.pdf_page,
+      pdf_page_count: extra.pdf_page_count,
+      source_url: extra.source_url,
+      opacity: floorPlan?.opacity ?? 0.55,
+      fit_mode: floorPlan?.fit_mode ?? 'contain',
+      rendered_width: dims.width,
+      rendered_height: dims.height
+    }, { clear: true, record: true });
+    setActiveTab('floor');
+    setNotice(`Loaded floor plan: ${name}.`);
+  }
+
+  async function handleFloorPlanUpload(e){
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if(!file) return;
+    setError(''); setNotice('');
+    if(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')){
+      const bytes = await file.arrayBuffer();
+      setActivePdf({ name: file.name, bytes });
+      await renderPdfBytes(file.name, bytes, 1);
+      return;
+    }
+    if(!file.type.startsWith('image/')){
+      setError('Please upload a PNG, JPG, or PDF floor plan.');
+      return;
+    }
+    const dataUrl = await readFileAsDataUrl(file);
+    setActivePdf(null);
+    await loadFloorImage(file.name, dataUrl);
+  }
+
+  async function loadSampleFloorPlan(){
+    setFloorBusy(true); setError(''); setNotice('');
+    try{
+      const res = await fetch(sampleFloorPlanUrl);
+      if(!res.ok) throw new Error(`Could not load sample (${res.status})`);
+      const dataUrl = await blobToDataUrl(await res.blob());
+      setActivePdf(null);
+      await loadFloorImage('sample_floorplan_wikimedia.jpg', dataUrl, { source_url: sampleFloorPlanSource });
+    } catch(err) {
+      setError(`Sample floor plan failed to load: ${err.message || err}`);
+    } finally {
+      setFloorBusy(false);
+    }
+  }
+
+  async function changePdfPage(pageNumber){
+    if(!activePdf?.bytes){
+      setError('Re-upload the PDF to render another page.');
+      return;
+    }
+    await renderPdfBytes(activePdf.name, activePdf.bytes, pageNumber);
+  }
+
+  function resetFloorPlanFit(){
+    if(!floorPlan) return;
+    patchFloorPlan({ opacity: 0.55, fit_mode: 'contain' }, { clear: false, record: false });
+  }
+
+  function clearFloorPlan(){
+    commit(prev=>{
+      prev.metadata = {...(prev.metadata || {})};
+      delete prev.metadata.floor_plan;
+      return prev;
+    }, false);
+    setActivePdf(null);
+    setNotice('Floor plan overlay cleared; traced grid cells remain.');
+  }
+
+  async function runSelected(){ const names=algorithms.filter(a=>selected[a]); if(!names.length) return; const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setLoading(true); setError(''); setNotice(''); try{ const out=await api.compareSelected(scenario,names); setResults(out); setVisible(v=>({...v,...Object.fromEntries(out.map(r=>[r.algorithm,true]))})); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
+  async function runAll(){ const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setSelected(Object.fromEntries(algorithms.map(a=>[a,true]))); setLoading(true); setError(''); setNotice(''); try{ setResults(await api.compare(scenario)); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
+  async function exportResults(){ try{ await api.exportResults(scenario, results); setNotice('Results appended to backend/data/experiment_logs.csv'); } catch(e){ setError(String(e.message||e)); } }
+  function loadScenario(idx){ const s=scenarios[idx]; if(s){ pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(s.metadata?.floor_plan ? 'floor' : 'builder'); setActivePdf(null); } }
   function exportScenario(){ const blob=new Blob([JSON.stringify(scenario,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${scenario.name.replaceAll(' ','_')}.json`; a.click(); }
-  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const s=JSON.parse(t); if(!s.grid||!s.start||!s.exits) throw new Error('Scenario JSON is missing grid/start/exits.'); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setError(''); } catch(err){ setError(`Import failed: ${err.message}`); } }); }
-  function toggleSort(k){ setSort(s=>s.key===k?{key:k,dir:s.dir==='asc'?'desc':'asc'}:{key:k,dir:'asc'}); }
+  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const s=JSON.parse(t); if(!s.grid||!s.start||!s.exits) throw new Error('Scenario JSON is missing grid/start/exits.'); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(s.metadata?.floor_plan ? 'floor' : 'builder'); setActivePdf(null); setError(''); setNotice('Scenario JSON imported.'); } catch(err){ setError(`Import failed: ${err.message}`); } }); }
+  function toggleSort(k){ setSort(s=>s.key===k?{key:k,dir:s.dir==='asc'?'desc':'asc'}:{key:k,dir:higherIsBetter.has(k)?'desc':'asc'}); }
 
   return <div className="app">
     <aside>
       <h1>CBCD Phase 1</h1><p>Risk-aware indoor navigation dashboard</p>
       <button className="primary" onClick={runSelected} disabled={loading}>{loading?'Running...':'Run selected'}</button><button onClick={runAll} disabled={loading}>Run all</button><button onClick={()=>setReplayKey(k=>k+1)}>Replay paths</button>
       {error && <div className="error" role="alert">{error}</div>}
+      {notice && <div className="notice" role="status">{notice}</div>}
       <section><h2>Algorithms</h2>{algorithms.map(a=><label className="check" key={a}><input type="checkbox" checked={selected[a]} onChange={e=>setSelected({...selected,[a]:e.target.checked})}/>{label(a)}</label>)}</section>
       <section><h2>Route overlays</h2><div className="routeFilters"><button className={routeFilter==='all'?'active':''} onClick={()=>setRouteFilter('all')}>All</button>{algorithms.map(a=><button key={a} className={routeFilter===a?'active':''} onClick={()=>setRouteFilter(a)}><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</button>)}</div><p className="hint">Use these filters when many methods overlap; route cells are highlighted instead of drawing dots inside the box.</p>{algorithms.map(a=><label className="check" key={a}><input type="checkbox" checked={visible[a]} onChange={e=>setVisible({...visible,[a]:e.target.checked})}/><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</label>)}<label>Animation speed <select aria-label="Animation speed" value={speed} onChange={e=>setSpeed(e.target.value)}>{Object.keys(speedMs).map(s=><option key={s}>{s}</option>)}</select></label></section>
       <section><h2>Built-in scenarios</h2><select aria-label="Load built-in scenario" onChange={e=>loadScenario(e.target.value)} defaultValue=""><option value="" disabled>Load scenario</option>{scenarios.map((s,i)=><option key={s.name} value={i}>{s.name}</option>)}</select></section>
@@ -222,28 +440,138 @@ function App(){
       <p className="hint">Shortcuts: 1–7 tools, R run selected, C clear results, Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z redo.</p>
     </aside>
     <main>
-      <header><h2>{scenario.name}</h2><p>Paint cells, then run comparison. Start is green; exits are red. Right-click erases. Grid cap: 80×80.</p></header>
-      <Legend />
-      <Grid scenario={scenario} paint={paint} beginCell={beginCell} enterCell={enterCell} endDrag={endDrag} pathMap={pathMap} mouseDown={mouseDown}/>
+      <header className="topHeader"><div><h2>{scenario.name}</h2><p>Paint cells, then run comparison. Start is green; exits are red. Right-click erases. Grid cap: 80×80.</p></div></header>
+      <StatusPanel />
+      <nav className="tabs" aria-label="Prototype workspace tabs">
+        <button className={activeTab==='builder'?'active':''} onClick={()=>setActiveTab('builder')}>Scenario Builder</button>
+        <button className={activeTab==='floor'?'active':''} onClick={()=>setActiveTab('floor')}>Floor Plan Planning</button>
+      </nav>
+      {activeTab === 'builder' ? (
+        <ScenarioWorkspace scenario={scenario} paint={paint} beginCell={beginCell} enterCell={enterCell} endDrag={endDrag} pathMap={pathMap} mouseDown={mouseDown}/>
+      ) : (
+        <FloorPlanWorkspace
+          scenario={scenario}
+          floorPlan={floorPlan}
+          paint={paint}
+          beginCell={beginCell}
+          enterCell={enterCell}
+          endDrag={endDrag}
+          pathMap={pathMap}
+          mouseDown={mouseDown}
+          onUpload={handleFloorPlanUpload}
+          onLoadSample={loadSampleFloorPlan}
+          onClear={clearFloorPlan}
+          onReset={resetFloorPlanFit}
+          onPatch={patchFloorPlan}
+          activePdf={activePdf}
+          onPdfPage={changePdfPage}
+          floorBusy={floorBusy}
+          runSelected={runSelected}
+          runAll={runAll}
+          loading={loading}
+        />
+      )}
       <Comparison results={sortedResults} winner={winner} bestByMetric={bestByMetric} weights={scenario.weights} sort={sort} toggleSort={toggleSort}/>
     </main>
   </div>
 }
 
+function StatusPanel(){
+  return <section className="statusPanel" aria-label="Current prototype status">
+    <div><b>Phase 1 algorithms</b><span>Dijkstra, A*, Weighted A*, and Q-learning are implemented.</span></div>
+    <div><b>Scenario library</b><span>S1-S6 run through the existing comparison engine.</span></div>
+    <div><b>Evidence</b><span>CSV export now includes deltas and reduction percentages.</span></div>
+    <div><b>Phase 2 YOLO</b><span>Not started; camera detection remains parked.</span></div>
+  </section>;
+}
+
+function ScenarioWorkspace(props){
+  return <>
+    <Legend />
+    <Grid {...props} />
+  </>;
+}
+
+function FloorPlanWorkspace({scenario, floorPlan, paint, beginCell, enterCell, endDrag, pathMap, mouseDown, onUpload, onLoadSample, onClear, onReset, onPatch, activePdf, onPdfPage, floorBusy, runSelected, runAll, loading}){
+  return <section className="floorPlanPanel">
+    <div className="floorControls">
+      <div>
+        <h2>Floor Plan Planning</h2>
+        <p>Upload a plan, align the grid visually, trace walls and risk/crowd zones manually, then run the same route algorithms.</p>
+      </div>
+      <div className="floorActions">
+        <label className="uploadButton">Upload floor plan
+          <input type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={onUpload} />
+        </label>
+        <button onClick={onLoadSample} disabled={floorBusy}>Load sample plan</button>
+        <button onClick={onReset} disabled={!floorPlan}>Reset fit</button>
+        <button onClick={onClear} disabled={!floorPlan}>Clear floor plan</button>
+        <button className="primaryLight" onClick={runSelected} disabled={loading}>Run selected</button>
+        <button onClick={runAll} disabled={loading}>Run all</button>
+      </div>
+    </div>
+    {floorPlan ? <div className="floorMeta">
+      <span><b>Source:</b> {floorPlan.name}</span>
+      <span><b>Type:</b> {floorPlan.source_type}</span>
+      {floorPlan.rendered_width && <span><b>Rendered:</b> {floorPlan.rendered_width}×{floorPlan.rendered_height}</span>}
+      {floorPlan.source_url && <a href={floorPlan.source_url} target="_blank" rel="noreferrer">Wikimedia source</a>}
+    </div> : <div className="emptyPanel compact">No floor plan loaded yet. Use Upload floor plan or Load sample plan, then trace the navigable grid on top.</div>}
+    {floorPlan && <div className="floorSettings">
+      <label>Overlay opacity {Math.round((floorPlan.opacity ?? 0.55) * 100)}%
+        <input type="range" min="0.1" max="1" step="0.05" value={floorPlan.opacity ?? 0.55} onChange={e=>onPatch({opacity:Number(e.target.value)}, {clear:false, record:false})}/>
+      </label>
+      <label>Fit mode
+        <select value={floorPlan.fit_mode || 'contain'} onChange={e=>onPatch({fit_mode:e.target.value}, {clear:false, record:false})}>
+          <option value="contain">Contain</option>
+          <option value="cover">Cover</option>
+          <option value="fill">Stretch</option>
+        </select>
+      </label>
+      {floorPlan.source_type === 'pdf' && <label>PDF page
+        <input type="number" min="1" max={floorPlan.pdf_page_count || 1} value={floorPlan.pdf_page || 1} onChange={e=>onPdfPage(Number(e.target.value))} disabled={!activePdf?.bytes || floorBusy}/>
+        <span className="hint"> of {floorPlan.pdf_page_count || 1}</span>
+      </label>}
+    </div>}
+    <Legend />
+    <Grid scenario={scenario} paint={paint} beginCell={beginCell} enterCell={enterCell} endDrag={endDrag} pathMap={pathMap} mouseDown={mouseDown} floorPlan={floorPlan} />
+  </section>;
+}
+
 function Legend(){ return <div className="legend">{tools.map(t=><span key={t}><span className={`swatch ${t}`}></span>{toolLabels[t]}</span>)}{algorithms.map(a=><span key={a}><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</span>)}</div>; }
-function Grid({scenario, paint, beginCell, enterCell, endDrag, pathMap, mouseDown}){
-  return <div className="gridWrap" onMouseLeave={endDrag}><div className="grid" style={{gridTemplateColumns:`repeat(${scenario.grid[0].length}, 22px)`}}>{scenario.grid.map((row,r)=>row.map((cell,c)=>{
+
+function Grid({scenario, paint, beginCell, enterCell, endDrag, pathMap, mouseDown, floorPlan}){
+  const rows = scenario.grid.length;
+  const cols = scenario.grid[0].length;
+  const width = cols * cellSize + Math.max(cols - 1, 0) * cellGap;
+  const height = rows * cellSize + Math.max(rows - 1, 0) * cellGap;
+  const grid = <div className={`grid ${floorPlan ? 'floorGrid' : ''}`} style={{gridTemplateColumns:`repeat(${cols}, ${cellSize}px)`}}>{scenario.grid.map((row,r)=>row.map((cell,c)=>{
     const isStart=scenario.start[0]===r&&scenario.start[1]===c; const isExit=scenario.exits.some(e=>e[0]===r&&e[1]===c); const paths=pathMap[key([r,c])]||[];
     const cls = isStart?'start':isExit?'exit':`${cell.type} i${cell.intensity}`;
     const routeStyle = paths.length ? {'--route-color': pathColors[paths[0]], '--route-color-2': pathColors[paths[1]||paths[0]]} : undefined;
     return <button key={`${r}-${c}`} aria-label={`Cell row ${r} column ${c} ${isStart?'start':isExit?'exit':cell.type}${paths.length?` route ${paths.map(label).join(', ')}`:''}`} title={`${r},${c} ${isStart?'start':isExit?'exit':cell.type} intensity ${cell.intensity}${paths.length?` • route: ${paths.map(label).join(', ')}`:''}`} style={routeStyle} className={`cell ${cls} ${paths.length?'hasRoute':''} ${paths.length>1?'multiRoute':''}`} onContextMenu={e=>{e.preventDefault();paint(r,c,'empty')}} onMouseDown={()=>beginCell(r,c)} onMouseEnter={()=>mouseDown&&enterCell(r,c)} onMouseUp={endDrag}>{paths.length>1 && <span className="routeBadge">{paths.length}</span>}</button>
-  }))}</div></div>
+  }))}</div>;
+
+  if(floorPlan?.rendered_image_data_url){
+    return <div className="gridWrap floorGridWrap" onMouseLeave={endDrag}>
+      <div className="floorCanvas" style={{width, height}}>
+        <img src={floorPlan.rendered_image_data_url} alt={`${floorPlan.name || 'Uploaded floor plan'} underlay`} style={{opacity: floorPlan.opacity ?? 0.55, objectFit: floorPlan.fit_mode || 'contain'}} />
+        {grid}
+      </div>
+    </div>;
+  }
+  return <div className="gridWrap" onMouseLeave={endDrag}>{grid}</div>;
 }
+
 function Comparison({results,winner,bestByMetric,weights,sort,toggleSort}){
   if(!results.length) return <div className="emptyPanel">No run yet. Use “Run selected” to generate the Phase 1 comparison table.</div>;
+  const dijkstra = results.find(r=>r.algorithm==='dijkstra');
+  const shortest = results.filter(r=>r.success).sort((a,b)=>a.distance-b.distance)[0];
+  const weighted = results.find(r=>r.algorithm==='weighted_astar' && r.success);
+  const safer = weighted || winner;
   const contribution = winner ? contributors(winner, weights).filter(([,v])=>v>0) : [];
   const sortMark=k=>sort.key===k?(sort.dir==='asc'?' ↑':' ↓'):'';
-  return <section className="results"><h2>Algorithm comparison</h2><div className="weightsLine">Weights: α={weights.alpha}, β={weights.beta}, γ={weights.gamma}, δ={weights.delta}, ε={weights.epsilon}; Weighted A* heuristic w={weights.heuristic_weight ?? 1}</div>{winner && <div className="recommend"><b>Recommended:</b> {label(winner.algorithm)} — lowest total cost ({winner.total_cost}), reached exit {formatCell(winner.reached_exit)}.<br/>Why: {contribution.length?`top contributors are ${contribution.map(([k,v])=>`${k} ${v.toFixed(1)}`).join(', ')}.`:'route avoided modeled risk/crowd exposure.'}</div>}<table><thead><tr><th><button className="sortBtn" onClick={()=>toggleSort('algorithm')}>Algorithm{sortMark('algorithm')}</button></th><th>Success</th><th>Reached exit</th>{metricCols.map(m=><th key={m} className="num"><button className="sortBtn" onClick={()=>toggleSort(m)}>{metricLabels[m]}{sortMark(m)}</button></th>)}</tr></thead><tbody>{results.map(r=><tr key={r.algorithm} className={winner?.algorithm===r.algorithm?'win':''} title={r.explanation||''}><td><span className="routeKey" style={{background:pathColors[r.algorithm]}}></span>{label(r.algorithm)}</td><td>{r.success?'✓':'×'}</td><td>{formatCell(r.reached_exit)}</td>{metricCols.map(m=><td key={m} className={`num ${r.success&&Number(r[m])===bestByMetric[m]?'best':''}`}>{formatMetric(r[m])}</td>)}</tr>)}</tbody></table></section>
+  const riskReduction = safer?.risk_reduction_pct;
+  return <section className="results"><h2>Algorithm comparison</h2><div className="weightsLine">Weights: α={weights.alpha}, β={weights.beta}, γ={weights.gamma}, δ={weights.delta}, ε={weights.epsilon}; Weighted A* heuristic w={weights.heuristic_weight ?? 1}</div>{winner && <div className="recommend"><b>Recommended:</b> {label(winner.algorithm)} — lowest total cost ({winner.total_cost}), reached exit {formatCell(winner.reached_exit)}.<br/>{shortest && <>Shortest route selected by {label(shortest.algorithm)} at {shortest.distance} steps. </>}{safer && <>Safer route selected by {label(safer.algorithm)} with risk {formatNumber(safer.risk_score)}. </>}{riskReduction !== null && riskReduction !== undefined && <>Risk reduced by {formatMetric('risk_reduction_pct', riskReduction)} vs Dijkstra. </>}<br/>Why: {contribution.length?`top contributors are ${contribution.map(([k,v])=>`${k} ${v.toFixed(1)}`).join(', ')}.`:'route avoided modeled risk/crowd exposure.'}{dijkstra && winner.algorithm !== 'dijkstra' ? ` Baseline Dijkstra total cost was ${dijkstra.total_cost}.` : ''}</div>}<table><thead><tr><th><button className="sortBtn" onClick={()=>toggleSort('algorithm')}>Algorithm{sortMark('algorithm')}</button></th><th>Success</th><th>Reached exit</th>{metricCols.map(m=><th key={m} className="num" aria-sort={sort.key===m?(sort.dir==='asc'?'ascending':'descending'):'none'}><button className="sortBtn" onClick={()=>toggleSort(m)}>{metricLabels[m]}{sortMark(m)}</button></th>)}</tr></thead><tbody>{results.map(r=><tr key={r.algorithm} className={winner?.algorithm===r.algorithm?'win':''} title={r.explanation||''}><td><span className="routeKey" style={{background:pathColors[r.algorithm]}}></span>{label(r.algorithm)}</td><td>{r.success?'✓':'×'}</td><td>{formatCell(r.reached_exit)}</td>{metricCols.map(m=><td key={m} className={`num ${r.success&&Number(r[m])===bestByMetric[m]?'best':''}`}>{formatMetric(m, r[m])}</td>)}</tr>)}</tbody></table></section>
 }
 
 function label(a){ return ({dijkstra:'Dijkstra', astar:'A*', weighted_astar:'Weighted A*', qlearning:'Q-learning'})[a]||a; }

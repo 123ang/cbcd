@@ -82,6 +82,20 @@ In the web dashboard:
    - **Distance-heavy** should prefer shorter routes.
    - **Safety-heavy** should avoid risk/crowd more strongly.
 
+## 4.1 Floor-plan planning test
+
+In the web dashboard:
+
+1. Open the **Floor Plan Planning** tab.
+2. Click **Load sample plan** to use the bundled public-domain Wikimedia floor plan.
+3. Adjust overlay opacity and fit mode if needed.
+4. Paint walls, a start point, at least one exit, and one risk/crowd corridor over the floor plan.
+5. Click **Run selected** or **Run all**.
+6. Confirm the comparison table still shows valid routes plus delta/risk-reduction fields.
+7. Export the scenario JSON, clear the board, then import that JSON to confirm the floor-plan overlay and traced grid are restored.
+
+For your own floor plans, the tab accepts PNG/JPG images and PDF files. PDFs are rendered client-side into an image overlay before tracing.
+
 ## 5. Backend automated tests
 
 From project root:

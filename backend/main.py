@@ -28,6 +28,19 @@ ALGORITHMS = {
     "qlearning": qlearning,
 }
 
+def _reduction_pct(baseline: float, value: float):
+    if baseline == 0:
+        return 0.0 if value == 0 else None
+    return round(((baseline - value) / baseline) * 100, 2)
+
+def _with_dijkstra_deltas(results: List[RouteResult], baseline: RouteResult):
+    for result in results:
+        result.delta_distance_vs_dijkstra = round(result.distance - baseline.distance, 3)
+        result.delta_risk_vs_dijkstra = round(result.risk_score - baseline.risk_score, 3)
+        result.risk_reduction_pct = _reduction_pct(baseline.risk_score, result.risk_score)
+        result.crowd_reduction_pct = _reduction_pct(baseline.crowd_score, result.crowd_score)
+    return results
+
 @app.get("/health")
 def health():
     return {"ok": True, "phase": "phase_1"}
@@ -50,13 +63,17 @@ def run_qlearning(req: ScenarioRequest):
 
 @app.post("/compare-algorithms", response_model=List[RouteResult])
 def compare_algorithms(req: ScenarioRequest):
-    return [fn(req) for fn in ALGORITHMS.values()]
+    results = [fn(req) for fn in ALGORITHMS.values()]
+    baseline = next((result for result in results if result.algorithm == "dijkstra"), results[0])
+    return _with_dijkstra_deltas(results, baseline)
 
 @app.post("/compare-selected", response_model=List[RouteResult])
 def compare_selected(payload: dict):
     req = ScenarioRequest(**payload["scenario"])
     selected = payload.get("algorithms") or list(ALGORITHMS)
-    return [ALGORITHMS[name](req) for name in selected if name in ALGORITHMS]
+    results = [ALGORITHMS[name](req) for name in selected if name in ALGORITHMS]
+    baseline = next((result for result in results if result.algorithm == "dijkstra"), None) or dijkstra(req)
+    return _with_dijkstra_deltas(results, baseline)
 
 @app.get("/load-scenario")
 def load_scenarios():
@@ -82,6 +99,8 @@ def export_results(payload: dict):
         "timestamp", "scenario", "algorithm", "success", "distance", "risk_score",
         "crowd_score", "total_cost", "time_ms", "nodes_expanded", "train_steps",
         "reached_exit", "exit_access_score",
+        "delta_distance_vs_dijkstra", "delta_risk_vs_dijkstra",
+        "risk_reduction_pct", "crowd_reduction_pct",
         "alpha", "beta", "gamma", "delta", "epsilon", "heuristic_weight"
     ]
     exists = EXPERIMENT_LOG.exists()
@@ -105,6 +124,10 @@ def export_results(payload: dict):
                 "train_steps": row.get("train_steps"),
                 "reached_exit": row.get("reached_exit"),
                 "exit_access_score": row.get("exit_access_score"),
+                "delta_distance_vs_dijkstra": row.get("delta_distance_vs_dijkstra"),
+                "delta_risk_vs_dijkstra": row.get("delta_risk_vs_dijkstra"),
+                "risk_reduction_pct": row.get("risk_reduction_pct"),
+                "crowd_reduction_pct": row.get("crowd_reduction_pct"),
                 "alpha": weights.get("alpha"),
                 "beta": weights.get("beta"),
                 "gamma": weights.get("gamma"),

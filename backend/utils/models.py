@@ -36,4 +36,8 @@ class RouteResult(BaseModel):
     reached_exit: Optional[Position] = None
     train_steps: Optional[int] = None
     exit_access_score: Optional[float] = None
+    delta_distance_vs_dijkstra: Optional[float] = None
+    delta_risk_vs_dijkstra: Optional[float] = None
+    risk_reduction_pct: Optional[float] = None
+    crowd_reduction_pct: Optional[float] = None
     explanation: Optional[str] = None

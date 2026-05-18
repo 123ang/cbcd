@@ -18,8 +18,14 @@ ALGORITHMS = [dijkstra, astar, weighted_astar, qlearning]
 FIELDS = [
     "timestamp", "scenario", "preset", "algorithm", "success", "distance", "risk_score",
     "crowd_score", "total_cost", "time_ms", "nodes_expanded", "train_steps", "reached_exit", "exit_access_score",
+    "delta_distance_vs_dijkstra", "delta_risk_vs_dijkstra", "risk_reduction_pct", "crowd_reduction_pct",
     "alpha", "beta", "gamma", "delta", "epsilon", "heuristic_weight"
 ]
+
+def reduction_pct(baseline, value):
+    if baseline == 0:
+        return 0.0 if value == 0 else None
+    return round(((baseline - value) / baseline) * 100, 2)
 
 
 def main():
@@ -30,8 +36,9 @@ def main():
             req_data = dict(scenario)
             req_data["weights"] = weights
             req = ScenarioRequest(**req_data)
-            for algo in ALGORITHMS:
-                result = algo(req).model_dump()
+            results = [algo(req).model_dump() for algo in ALGORITHMS]
+            baseline = next(result for result in results if result["algorithm"] == "dijkstra")
+            for result in results:
                 rows.append({
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "scenario": scenario["name"],
@@ -47,6 +54,10 @@ def main():
                     "train_steps": result.get("train_steps"),
                     "reached_exit": result.get("reached_exit"),
                     "exit_access_score": result.get("exit_access_score"),
+                    "delta_distance_vs_dijkstra": round(result["distance"] - baseline["distance"], 3),
+                    "delta_risk_vs_dijkstra": round(result["risk_score"] - baseline["risk_score"], 3),
+                    "risk_reduction_pct": reduction_pct(baseline["risk_score"], result["risk_score"]),
+                    "crowd_reduction_pct": reduction_pct(baseline["crowd_score"], result["crowd_score"]),
                     **weights,
                 })
     OUT.parent.mkdir(parents=True, exist_ok=True)
