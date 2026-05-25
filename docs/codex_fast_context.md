@@ -36,6 +36,7 @@ The current canonical Stage 1 article draft is now:
 
 - `drafts/vision_assisted_risk_aware_framework_article.md`
 - `drafts/vision_assisted_risk_aware_framework_article.docx`
+- `drafts/vision_assisted_risk_aware_framework_article.tex`
 
 Use the wording **vision-assisted** rather than **camera-assisted** in the article title/framing. This keeps the framework open to CCTV, smartphone camera input, depth cameras, LiDAR-enabled devices, and future vision-based density-estimation methods.
 
@@ -43,9 +44,23 @@ Use the wording **vision-assisted** rather than **camera-assisted** in the artic
 - The article now uses a real grayscale framework figure instead of a Mermaid/code flowchart.
 - Figure file: `docs/assets/vision_assisted_framework_architecture.png`
 - The DOCX was regenerated in a plain journal-manuscript style: A4 page, 1-inch margins, Times New Roman 12 pt body, black headings, justified body text, simple tables, and one inserted Figure 1.
-- DOCX structural/a11y checks passed with 0 high/medium/low issues. Visual render QA could not run because LibreOffice/`soffice` is not installed in the local environment.
-- Author order on the canonical article: NAZRUL ANWAR BIN RAMLI, Izwan Nizal Mohd Shaharanee, Jastini, and Ang Jin Sheng.
+- DOCX structural/a11y checks passed with 0 high/medium/low issues.
+- LibreOffice/`soffice` and Poppler were installed via Homebrew on 2026-05-18; DOCX visual render QA now works when run outside the sandbox with `TMPDIR=/private/tmp`.
+- Current article author/affiliation block: Nazrul Anwar Bin Ramli, Jastini Mohd Jamil, Izwan Nizal Mohd Shaharanee, Ang Jin Sheng; `Department of Decision Science, School of Quantitative Sciences, Universiti Utara Malaysia, Sintok, Malaysia`.
+- The introduction no longer uses numbered "Objectives" or "Research questions" lists. It now uses a Scopus-style prose paragraph beginning "To address this problem..." that states the review, design requirements, framework focus, scenario walkthroughs, and future validation plan.
+- Table 2 now cites each literature stream directly in the first column, e.g. indoor navigation (Łukasik et al., 2024), fire evacuation routing (Kim et al., 2026; Zhou et al., 2020; Mocanu et al., 2026), risk-aware path planning, crowd detection, density estimation, indoor positioning, decision support, and the proposed framework.
+- Crowd-density formula and Table 1 support now cite pedestrian LOS / crowd-dynamics / density-risk literature in prose and caption: Fruin (1971), Helbing & Johansson (2013), and Yin et al. (2019). Table 1 should be described as synthesized/adapted, not as a new standard written by the article authors.
+- Section 4.1 Framework Overview uses prose rather than a numbered list. This prevents Word from continuing the methodology list numbering as 12, 13, 14, etc.
+- Formula lines in the DOCX are centered, italic, Cambria Math-style equation text instead of code blocks. Native Word equation OOXML was tested but rejected because the renderer converted "in zone" into a mathematical element-of symbol.
+- On 2026-05-21, framework-only wording was tightened: removed Stage 1 / iPhone / prototype framing from the article body, paraphrased indoor positioning as a supporting framework layer, changed "opaque" sentence to simpler wording, and fixed DOCX occurrences where `A*` had rendered as plain `A`.
 - Tone direction: keep it practical, framework-driven, and closer to the `docs/ang_article_writing_style_notes.md` voice; avoid overly polished AI-style phrasing.
+
+2026-05-22 LaTeX/DOCX workflow update:
+- Pandoc 3.9.0.2 was installed via Homebrew and is used for reproducible article builds.
+- `scripts/build_article_from_latex.sh` now regenerates both `drafts/vision_assisted_risk_aware_framework_article.tex` and the canonical DOCX from the Markdown manuscript. The DOCX path intentionally builds from Markdown with LaTeX equations because direct LaTeX `longtable` -> DOCX conversion corrupted wide tables in LibreOffice rendering.
+- `scripts/polish_latex_docx.py` applies A4, 1-inch margins, Times New Roman, black headings/body text, table cleanup, known table-value repair, and Word table geometry.
+- The canonical DOCX now contains real Word equation objects for the formulas (`m:oMath` and `m:f` present in `word/document.xml`) while preserving readable journal-style tables.
+- Latest checks run after rebuild: DOCX zip test passed, accessibility audit reported `high=0 medium=0 low=0`, and LibreOffice render QA was visually checked for the title page, formula page, and Table 1 page.
 
 ## Recommended Framing
 

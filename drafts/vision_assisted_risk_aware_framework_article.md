@@ -1,12 +1,12 @@
 # A Conceptual Framework for Vision-Assisted Risk-Aware Evacuation Route Recommendation in Confined Indoor Environments
 
-Ang Jin Sheng1, Jastini Mohd Jamil1, Izwan Nizal Mohd Shaharanee1
+Nazrul Anwar Bin Ramli, Jastini Mohd Jamil, Izwan Nizal Mohd Shaharanee, Ang Jin Sheng
 
-1 Department of Decision Science, School of Quantitative Sciences, Universiti Utara Malaysia, Sintok, Malaysia
+Department of Decision Science, School of Quantitative Sciences, Universiti Utara Malaysia, Sintok, Malaysia
 
 ## Abstract
 
-Indoor evacuation route recommendation in confined environments should not depend only on the shortest path. In a real building, the shortest route may pass through a crowded corridor, a blocked area, smoke-affected space, or an exit that is no longer suitable. Previous studies have discussed indoor navigation, fire evacuation routing, dynamic risk-aware path planning, crowd detection, crowd counting, indoor localization, and decision-support systems. However, these areas are still often developed separately. Routing studies may assume that crowd and hazard information is already available, while vision-based crowd studies may stop at monitoring or people counting without showing how the detected crowd condition can change the recommended route. Therefore, this paper proposes a conceptual framework for vision-assisted risk-aware evacuation route recommendation in confined indoor environments. The framework is organized into six layers: spatial environment modelling, risk representation, crowd perception, route planning, decision-support visualization, and feedback-based replanning. A literature-based design science approach is used to develop the framework, and scenario walkthroughs are used to demonstrate how the framework responds to a high-risk corridor, a crowded exit, and a dynamic blockage or crowd update. The framework treats crowd condition as local density, converts crowd levels into route-cost input, and supports route explanation by comparing distance, risk exposure, crowd exposure, and total route cost. In short, the paper contributes a practical framework that connects vision-assisted crowd perception with risk-aware route planning and explainable decision support. It also provides a foundation for future simulation-based prototype development, expert validation, and later integration with real vision-based crowd-density estimation.
+Indoor evacuation route recommendation in confined environments should not depend only on the shortest path. In a real building, the shortest route may pass through a crowded corridor, a blocked area, smoke-affected space, or an exit that is no longer suitable. Previous studies have discussed indoor navigation, fire evacuation routing, dynamic risk-aware path planning, crowd detection, crowd counting, indoor localization, and decision-support systems. However, these areas are still often developed separately. Routing studies may assume that crowd and hazard information is already available, while vision-based crowd studies may stop at monitoring or people counting without showing how the detected crowd condition can change the recommended route. Therefore, this paper proposes a conceptual framework for vision-assisted risk-aware evacuation route recommendation in confined indoor environments. The framework is organized into six layers: spatial environment modelling, risk representation, crowd perception, route planning, decision-support visualization, and feedback-based replanning. A literature-based design science approach is used to develop the framework, and scenario walkthroughs are used to demonstrate how the framework responds to a high-risk corridor, a crowded exit, and a dynamic blockage or crowd update. The framework treats crowd condition as local density, converts crowd levels into route-cost input, and supports route explanation by comparing distance, risk exposure, crowd exposure, and total route cost. In short, the paper contributes a practical framework that connects vision-assisted crowd perception with risk-aware route planning and explainable decision support. It also provides a foundation for later simulation-based evaluation, expert validation, and empirical testing of vision-based crowd-density input.
 
 **Keywords:** indoor evacuation; risk-aware routing; crowd density; vision-assisted navigation; crowd perception; decision support; conceptual framework
 
@@ -22,20 +22,9 @@ At the same time, computer vision and deep learning methods now make it possible
 
 The research gap, therefore, is not simply the absence of crowd detection or the absence of routing algorithms. Both areas already exist. The gap is the weak connection between crowd perception, risk representation, route-cost modelling, and explainable decision support. A vision system may detect congestion, but if the result is not connected to route planning, it does not improve the route recommendation. A routing system may calculate a path, but if it does not receive updated crowd and hazard information, it may recommend a route that is no longer suitable.
 
-Based on this gap, this paper proposes a conceptual framework for vision-assisted risk-aware evacuation route recommendation in confined indoor environments. The term "vision-assisted" is used because the framework can support multiple visual sensing sources, including CCTV, smartphone camera input, depth cameras, LiDAR-enabled mobile devices, or future vision-based density-estimation methods. The framework is not presented as a certified emergency evacuation system. It is proposed as a design-science artifact and decision-support structure that can guide future prototype development and simulation-based evaluation.
+Based on this gap, this paper proposes a conceptual framework for vision-assisted risk-aware evacuation route recommendation in confined indoor environments. The term "vision-assisted" is used because the framework can support multiple visual sensing sources, including CCTV, smartphone camera input, depth cameras, LiDAR-enabled devices, or vision-based density-estimation methods. The framework is not presented as a certified emergency evacuation system. It is proposed as a design-science artifact and decision-support structure that can guide simulation-based evaluation and later empirical validation.
 
-The objectives of this paper are:
-
-1. To review relevant studies on indoor evacuation routing, risk-aware path planning, crowd perception, indoor positioning, and decision-support systems.
-2. To identify design requirements for integrating vision-based crowd perception with risk-aware indoor route recommendation.
-3. To propose a conceptual framework that links spatial environment modelling, risk representation, crowd perception, route planning, decision-support visualization, and feedback-based replanning.
-4. To demonstrate the framework logic through scenario walkthroughs and propose future validation metrics.
-
-The research questions are:
-
-1. What limitations exist in shortest-path indoor routing under dynamic crowd and risk conditions?
-2. How can vision-based crowd perception be converted into route-planning input?
-3. How can a conceptual framework integrate risk, crowd density, route planning, and explainable decision support for confined indoor environments?
+To address this problem, the study reviews related work on indoor evacuation routing, risk-aware path planning, crowd perception, indoor positioning, and decision-support systems. It then identifies the design requirements needed to connect vision-based crowd perception with risk-aware indoor route recommendation. The main focus is to show how crowd density and risk conditions can be converted into route-planning input, and how the resulting route can be explained through distance, risk exposure, crowd exposure, and total route cost. The framework logic is demonstrated through scenario walkthroughs and supported by a proposed validation plan for later empirical evaluation.
 
 The remainder of this paper is organized as follows. Section 2 reviews related literature. Section 3 describes the methodology. Section 4 presents the proposed conceptual framework. Section 5 explains the process flow. Section 6 demonstrates the framework using scenario walkthroughs. Section 7 presents the validation plan. Section 8 discusses contributions, implications, and limitations. Section 9 concludes the paper and outlines future work.
 
@@ -63,29 +52,31 @@ Other studies also support the movement from shortest path to risk-aware routing
 
 ### 2.3 Crowd Density, Crowd Detection, and Crowd Counting
 
-Crowd information is important in confined indoor evacuation because congestion affects movement speed, comfort, route capacity, and safety. A crowd should not be defined only by the total number of people. Twenty people in a large hall may not be crowded, but twenty people in a narrow corridor may create congestion. Therefore, this paper operationalizes crowd condition as local pedestrian density.
+Crowd information is important in confined indoor evacuation because congestion affects movement speed, comfort, route capacity, and safety. A crowd should not be defined only by the total number of people. Twenty people in a large hall may not be crowded, but twenty people in a narrow corridor may create congestion. Therefore, this paper operationalizes crowd condition as local pedestrian density. In pedestrian and crowd studies, density is commonly expressed as the number of pedestrians within a given area, often in persons per square meter, and is used to describe movement comfort, congestion, and safety risk (Fruin, 1971; Helbing & Johansson, 2013; Yin et al., 2019).
 
 The basic density formula is:
 
-```text
-crowd_density = number_of_people_in_zone / zone_area_m2
-```
+$$
+\text{Crowd density} =
+\frac{\text{Number of people in zone}}{\text{Zone area }(m^2)}
+$$
 
 For a grid-based route-planning model, the formula can be interpreted as:
 
-```text
-cell_density = detected_people_assigned_to_cell / real_world_cell_area_m2
-```
+$$
+\text{Cell density} =
+\frac{\text{Detected people assigned to cell}}{\text{Real-world cell area }(m^2)}
+$$
 
-For the proposed framework, crowd density can be categorized into practical levels as shown in Table 1. These categories are used as a conceptual guide for converting crowd perception into route-cost input. The exact threshold may be adjusted depending on building type, corridor width, camera placement, and safety policy.
+For the proposed framework, crowd density can be categorized into practical levels as shown in Table 1. These categories are not proposed as a new crowd-safety standard. They are synthesized from pedestrian level-of-service logic and crowd-risk literature, where lower densities indicate freer movement, densities around 3-4 persons per square meter are treated cautiously, and about 5 persons per square meter is often discussed as a critical crowd-risk level (Fruin, 1971; Helbing & Johansson, 2013; Yin et al., 2019). The exact threshold may be adjusted depending on building type, corridor width, camera placement, and safety policy.
 
-**Table 1. Working crowd-density categories for route-cost scoring**
+**Table 1. Working crowd-density categories for route-cost scoring, synthesized from Fruin (1971), Helbing and Johansson (2013), and Yin et al. (2019)**
 
 | Crowd level | Approximate density | Route-planning meaning |
 |---|---:|---|
-| Low | 0.5-1.5 persons/m2 | Movement is possible with limited interference |
-| Medium | 1.5-3 persons/m2 | Movement is affected and route cost should increase |
-| High | 3-4 persons/m2 | Congestion risk is significant |
+| Low | 0.5 to 1.5 persons/m2 | Movement is possible with limited interference |
+| Medium | 1.5 to 3 persons/m2 | Movement is affected and route cost should increase |
+| High | 3 to 4 persons/m2 | Congestion risk is significant |
 | Critical | Above 4-5 persons/m2 | Area should be avoided when alternatives exist |
 
 Crowd safety studies often warn that dense crowds above approximately 3-4 persons per square meter should be treated cautiously, and around 5 persons per square meter is commonly considered critical in crowd-risk contexts (Yin et al., 2019). This does not mean that a single universal threshold applies to every building. Rather, it supports the need to model crowd density as a risk factor rather than treating all walkable space equally.
@@ -100,7 +91,7 @@ Indoor positioning refers to estimating the location of a user, device, or objec
 
 Indoor positioning is relevant because a route recommendation system must know the user's start location. However, indoor localization remains challenging because GPS is unreliable indoors and no single indoor positioning method is universally dominant (Łukasik et al., 2024). Combining multiple data sources can improve accuracy, but it also increases system complexity.
 
-For this Stage 1 conceptual framework, indoor positioning is treated as an enabling component rather than the main contribution. The framework assumes that the start point can be provided by manual selection, staff input, a mobile device, an indoor positioning module, or a future localization system. For prototype development, an iPhone or similar smartphone could support later implementation through camera input, inertial sensing, AR-based tracking, and, on some devices, LiDAR-assisted depth sensing. However, the first framework article should not overclaim real-time indoor positioning. The immediate contribution remains the link between crowd perception, risk scoring, route planning, and decision-support explanation.
+In the proposed framework, indoor positioning is treated as a supporting layer rather than the central contribution. The framework only requires a start location to be available, and this start location may come from manual selection, staff input, a mobile device, an indoor positioning module, or another localization approach. The paper therefore does not claim to solve real-time indoor positioning. Its main contribution is the framework connection between crowd perception, risk scoring, route planning, and decision-support explanation.
 
 ### 2.5 Crowd Dynamics and Evacuation Behaviour
 
@@ -114,13 +105,13 @@ Agent-based and simulation-based evacuation studies are useful for future evalua
 
 A decision-support system should help users or decision-makers understand a recommendation. In evacuation route recommendation, simply outputting a path is not enough. A route may be longer than the shortest path, and users may question why it was selected. Therefore, the system should explain the trade-off between distance, risk, crowd exposure, blockage, and exit accessibility.
 
-An explainable decision-support interface can show the indoor map, selected route, alternative routes, risk zones, crowd zones, blocked paths, exits, and route metrics. These metrics may include route distance, risk score, crowd score, total cost, computation time, and reduction in risk compared with a shortest-path baseline. The goal is to make the decision interpretable rather than opaque.
+An explainable decision-support interface can show the indoor map, selected route, alternative routes, risk zones, crowd zones, blocked paths, exits, and route metrics. These metrics may include route distance, risk score, crowd score, total cost, computation time, and reduction in risk compared with a shortest-path baseline. In simple terms, the system should show why a route is recommended, not only display the route result.
 
 ### 2.7 Design Science and Conceptual Framework Development
 
-Design science research is suitable for studies that develop useful artifacts such as models, methods, frameworks, architectures, or prototypes (Hevner et al., 2004). The Design Science Research Methodology includes problem identification, objective definition, design and development, demonstration, evaluation, and communication (Peffers et al., 2007). This paper aligns with design science because it proposes a conceptual artifact to address a practical problem: how to integrate vision-based crowd perception with risk-aware indoor route recommendation.
+Design science research is suitable for studies that develop useful artifacts such as models, methods, frameworks, or architectures (Hevner et al., 2004). The Design Science Research Methodology includes problem identification, objective definition, design and development, demonstration, evaluation, and communication (Peffers et al., 2007). This paper aligns with design science because it proposes a conceptual artifact to address a practical problem: how to integrate vision-based crowd perception with risk-aware indoor route recommendation.
 
-The current paper focuses on framework design and scenario-based demonstration. It does not claim full deployment or certified emergency use. Future work should implement and evaluate the framework through simulation, prototype testing, and expert review.
+The current paper focuses on framework design and scenario-based demonstration. It does not claim full deployment or certified emergency use. Later work should evaluate the framework through simulation, expert review, and empirical testing.
 
 ### 2.8 Research Gap Summary
 
@@ -130,16 +121,16 @@ The gap addressed by this paper is the lack of an integrated conceptual framewor
 
 **Table 2. Literature comparison and identified gap**
 
-| Research stream | Existing contribution | Limitation for this study |
+| Research stream and supporting citation | Existing contribution | Limitation for this study |
 |---|---|---|
-| Indoor navigation | Provides route guidance and graph/grid modelling | Often emphasizes distance or travel efficiency |
-| Fire evacuation routing | Considers smoke, fire, accessibility, and dynamic hazards | May assume crowd/risk input is already available |
-| Risk-aware path planning | Adds hazard and congestion factors into route cost | Often focuses on algorithm output rather than explanation |
-| Crowd detection | Detects or counts people from visual input | Often stops at monitoring rather than route recommendation |
-| Density estimation | Supports counting under occlusion and high density | Requires mapping into zones and route-cost scores |
-| Indoor positioning | Estimates user location in indoor spaces | Remains difficult and may require multimodal sensing |
-| Decision support | Visualizes recommendations and supports decisions | Needs live or updated risk/crowd input |
-| Proposed framework | Integrates spatial, risk, crowd, routing, visualization, and feedback layers | Requires future prototype and validation |
+| Indoor navigation (Łukasik et al., 2024) | Provides route guidance and graph/grid modelling | Often emphasizes distance or travel efficiency |
+| Fire evacuation routing (Kim et al., 2026; Zhou et al., 2020; Mocanu et al., 2026) | Considers smoke, fire, accessibility, and dynamic hazards | May assume crowd/risk input is already available |
+| Risk-aware path planning (Kim et al., 2026; Zhou et al., 2020; Lopez-Carmona and Paricio Garcia, 2021) | Adds hazard and congestion factors into route cost | Often focuses on algorithm output rather than explanation |
+| Crowd detection (Chen et al., 2025; Yiğit, 2025) | Detects or counts people from visual input | Often stops at monitoring rather than route recommendation |
+| Density estimation (Gao et al., 2025; Yin et al., 2019) | Supports counting under occlusion and high density | Requires mapping into zones and route-cost scores |
+| Indoor positioning (Łukasik et al., 2024) | Estimates user location in indoor spaces | Remains difficult and may require multimodal sensing |
+| Decision support (Lopez-Carmona and Paricio Garcia, 2021; Hevner et al., 2004; Peffers et al., 2007) | Visualizes recommendations and supports decisions | Needs live or updated risk/crowd input |
+| Proposed framework (this study) | Integrates spatial, risk, crowd, routing, visualization, and feedback layers | Requires future empirical validation |
 
 ## 3. Research Methodology
 
@@ -169,14 +160,7 @@ This paper is not a full systematic literature review. PRISMA guidance may be us
 
 ### 4.1 Framework Overview
 
-The proposed framework is designed to connect visual crowd perception with route recommendation. The detail layers that happen in the framework are described as follows:
-
-1. Spatial Environment Layer
-2. Risk Representation Layer
-3. Crowd Perception Layer
-4. Route Planning Layer
-5. Decision-Support and Visualization Layer
-6. Feedback and Replanning Layer
+The proposed framework is designed to connect visual crowd perception with route recommendation. The detail layers that happen in the framework are the Spatial Environment Layer, Risk Representation Layer, Crowd Perception Layer, Route Planning Layer, Decision-Support and Visualization Layer, and Feedback and Replanning Layer.
 
 The spatial environment layer provides the indoor layout. The risk representation layer assigns risk values to hazards and unsafe areas. The crowd perception layer estimates crowd density from visual input. The route planning layer combines distance, risk, crowd, blockage, and exit information. The decision-support layer visualizes and explains the route. Finally, the feedback and replanning layer updates the route when new conditions are detected.
 
@@ -212,15 +196,19 @@ The output is a crowd score or density level for each zone or route cell. This s
 
 The route planning layer computes the recommended path using spatial, risk, and crowd information. The route is not selected by distance alone. Instead, route cost should include multiple factors:
 
-```text
-route_cost = distance_cost + risk_cost + crowd_cost + blockage_cost + exit_accessibility_cost
-```
+$$
+\text{Route cost} =
+\text{Distance cost} + \text{Risk cost} + \text{Crowd cost}
++ \text{Blockage cost} + \text{Exit accessibility cost}
+$$
 
 At cell or edge level, a simplified weighted model can be expressed as:
 
-```text
-cell_cost = alpha(distance) + beta(crowd) + gamma(risk) + delta(blockage)
-```
+$$
+\text{Cell cost} =
+\alpha(\text{Distance}) + \beta(\text{Crowd})
++ \gamma(\text{Risk}) + \delta(\text{Blockage})
+$$
 
 where alpha, beta, gamma, and delta are weights. Increasing the risk weight makes the algorithm more likely to avoid hazardous areas. Increasing the crowd weight makes the algorithm more likely to avoid congested areas.
 
@@ -316,7 +304,7 @@ The feedback and replanning layer updates the crowd or risk score. The route pla
 
 ## 7. Proposed Validation Plan
 
-Because this paper presents a conceptual framework, validation should be conducted in stages. The first stage is expert review. The second stage is simulation-based prototype evaluation. The third stage is future real-world or semi-controlled testing after the prototype becomes more mature.
+Because this paper presents a conceptual framework, validation should be conducted in stages. The first stage is expert review. The second stage is simulation-based framework evaluation. The third stage is real-world or semi-controlled empirical testing when the framework is ready for field validation.
 
 ### 7.1 Expert Review
 
@@ -334,9 +322,9 @@ Expert review can evaluate whether the framework is clear, complete, feasible, a
 | Replanning | Is the feedback loop suitable for dynamic indoor conditions? |
 | Scope control | Does the framework avoid overclaiming certified emergency performance? |
 
-### 7.2 Simulation-Based Prototype Evaluation
+### 7.2 Simulation-Based Framework Evaluation
 
-Future work should implement the framework as a prototype and evaluate it using controlled scenarios. A grid-based or graph-based indoor model can be used to compare distance-only routing with risk-aware routing. Dijkstra and A* can be used as shortest-path baselines. Weighted A* can be used as the main explainable risk-aware method. Learning-based methods can be evaluated as additional comparison methods, but the comparison should focus on evidence rather than assumption.
+Later evaluation can test the framework using controlled simulation scenarios. A grid-based or graph-based indoor model can be used to compare distance-only routing with risk-aware routing. Dijkstra and A* can be used as shortest-path baselines. Weighted A* can be used as the main explainable risk-aware method. Learning-based methods can be evaluated as additional comparison methods, but the comparison should focus on evidence rather than assumption.
 
 **Table 8. Future quantitative evaluation metrics**
 
@@ -354,9 +342,9 @@ Future work should implement the framework as a prototype and evaluate it using 
 | Crowd reduction percentage | Reduction in crowd exposure compared with Dijkstra | Higher |
 | Explanation clarity | Expert/user rating of route explanation | Higher |
 
-### 7.3 Future Vision-Based Evaluation
+### 7.3 Vision-Based Crowd Evaluation
 
-Future implementation can integrate visual input to update crowd scores automatically. A first implementation may use YOLO-based person detection in low- to moderate-density scenes. A later implementation may use head detection, density-map estimation, or hybrid models in dense scenes. The evaluation should compare detected crowd level against manual counts or annotated data.
+The framework can accommodate visual input that updates crowd scores automatically. YOLO-based person detection is suitable for low- to moderate-density scenes, while head detection, density-map estimation, or hybrid methods may be more suitable for dense scenes. Evaluation should compare estimated crowd level against manual counts or annotated data.
 
 ## 8. Discussion
 
@@ -368,13 +356,13 @@ This contribution is important because crowd condition is a dynamic risk factor.
 
 ### 8.2 Practical Implications
 
-The framework can guide future development of a decision-support prototype for buildings such as campuses, malls, libraries, hospitals, event venues, and transport terminals. A first prototype can use a floor plan with manually assigned risk and crowd zones. A later prototype can integrate visual crowd detection. Another extension can add indoor positioning for user location.
+The framework can guide the design of decision-support systems for buildings such as campuses, malls, libraries, hospitals, event venues, and transport terminals. The framework can represent a floor plan with manually assigned risk and crowd zones, integrate visual crowd detection as a crowd-input layer, and include indoor positioning as a supporting source of user location when needed.
 
 The framework can also support safety officers and building managers. Instead of only displaying a path, the system can explain why the path is recommended. For example, it can show that the selected route is longer but reduces risk exposure by a certain percentage compared with the Dijkstra shortest-path baseline. This type of explanation is important when the recommended route is not the shortest route.
 
-### 8.3 Implementation Implications
+### 8.3 Operationalization Implications
 
-The framework can be implemented gradually:
+The framework can be operationalized through staged evaluation:
 
 1. **Simulation phase.** Use a grid-based floor plan with manual risk and crowd scores.
 2. **Vision phase.** Use visual input to estimate people count or crowd density by zone.
@@ -383,13 +371,13 @@ The framework can be implemented gradually:
 5. **Decision-support phase.** Show route metrics, route overlays, and explanation text.
 6. **Localization phase.** Add indoor positioning or mobile-device location estimation if required.
 
-This staged approach keeps the work realistic. It also allows each component to be evaluated independently before any real deployment is considered.
+This staged approach keeps the framework realistic. It also allows each component to be evaluated independently before any real deployment is considered.
 
 ### 8.4 Limitations
 
-This paper has several limitations. First, the framework is conceptual and has not yet been fully validated in a real building. Second, scenario walkthroughs demonstrate the logic but do not provide empirical proof of safety improvement. Third, visual crowd perception may be affected by occlusion, perspective distortion, lighting variation, privacy requirements, camera placement, and domain shift. Fourth, indoor positioning is treated as a future enabling component and is not solved in this paper. Fifth, route recommendation should not be interpreted as certified emergency evacuation instruction without proper safety validation, regulatory review, and deployment testing.
+This paper has several limitations. First, the framework is conceptual and has not yet been fully validated in a real building. Second, scenario walkthroughs demonstrate the logic but do not provide empirical proof of safety improvement. Third, visual crowd perception may be affected by occlusion, perspective distortion, lighting variation, privacy requirements, camera placement, and domain shift. Fourth, indoor positioning is treated as a supporting component and is not solved in this paper. Fifth, route recommendation should not be interpreted as certified emergency evacuation instruction without proper safety validation, regulatory review, and deployment testing.
 
-Despite these limitations, the framework provides a useful foundation for future prototype development. It defines how crowd perception, risk scoring, route planning, and explanation can be connected in one decision-support structure.
+Despite these limitations, the framework provides a useful foundation for future evaluation and system design. It defines how crowd perception, risk scoring, route planning, and explanation can be connected in one decision-support structure.
 
 ## 9. Conclusion and Future Work
 
@@ -397,7 +385,7 @@ In a nutshell, this paper proposed a conceptual framework for vision-assisted ri
 
 The proposed framework contributes by linking vision-based crowd perception to risk-aware route-cost modelling and explainable route recommendation. It operationalizes crowd condition as local density, supports the conversion of crowd levels into route-cost scores, and provides a structure for explaining why one route is recommended over another.
 
-For future work, the framework should be implemented as a prototype and evaluated using simulation-based scenarios. The prototype should compare Dijkstra, A*, Weighted A*, and selected learning-based methods under risk and crowd conditions. Evaluation should include distance, risk exposure, crowd exposure, total cost, computation time, success rate, risk reduction percentage, crowd reduction percentage, and explanation clarity. Later work can integrate real visual crowd detection, density-map estimation, indoor positioning, and expert/user evaluation.
+For future work, the framework should be evaluated using simulation-based scenarios and expert review. The evaluation should compare Dijkstra, A*, Weighted A*, and selected learning-based methods under risk and crowd conditions. Evaluation should include distance, risk exposure, crowd exposure, total cost, computation time, success rate, risk reduction percentage, crowd reduction percentage, and explanation clarity. Later studies can examine real visual crowd detection, density-map estimation, indoor positioning, and expert/user evaluation within the same framework structure.
 
 ## References
 
@@ -410,6 +398,8 @@ Haghani, M., & Ronchi, E. (2024). Revisiting the paper "Simulating dynamical fea
 Helbing, D., Farkas, I., & Vicsek, T. (2000). Simulating dynamical features of escape panic. *Nature, 407*, 487-490. https://doi.org/10.1038/35035023
 
 Helbing, D., & Johansson, A. (2013). Pedestrian, crowd, and evacuation dynamics. arXiv:1309.1609. https://arxiv.org/abs/1309.1609
+
+Fruin, J. J. (1971). *Pedestrian planning and design*. Metropolitan Association of Urban Designers and Environmental Planners.
 
 Hevner, A. R., March, S. T., Park, J., & Ram, S. (2004). Design science in information systems research. *MIS Quarterly, 28*(1), 75-105.
 
