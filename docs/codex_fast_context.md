@@ -131,6 +131,17 @@ Use the article PDFs like this:
 
 For quick answers to recurring article questions about crowd thresholds, density calculation, people counting methods, evacuation sensor inputs, and the dynamic crowd/smoke algorithm paper, read `docs/article_qna_fast_context.md`.
 
+## Incoming GRA Syafiq Bundle
+
+On 2026-05-25, two incoming root files were reviewed and ignored in git:
+
+- `Literature Review - Matrix 20260524.xlsx`
+- `1. GRA - Syafiq [Shared]-20260525T122622Z-3-001.zip`
+
+The ZIP was extracted to `incoming/gra_syafiq_shared_20260525/`. The root XLSX is identical to the extracted `1. Literature Review/Literature Review - Matrix 20260524.xlsx`.
+
+Read `docs/incoming_gra_syafiq_review_20260525.md` for the filtered summary. Key point: the workbook is useful but much broader than the current focused article/prototype. Use only the papers directly tied to indoor evacuation, risk-aware routing, crowd density/detection, decision support, design science, and supporting indoor positioning. Treat emotion/EEG/wearables, broad RL algorithms, robot-only navigation, smart-city-scale flow, GRA registration, patent templates, and grant-admin files as unrelated or low priority for the current work.
+
 ## Main Risks / Fixes
 
 - Pick one primary sensing direction: camera/YOLO or LiDAR/SLAM.

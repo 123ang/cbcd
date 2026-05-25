@@ -18,3 +18,8 @@ backend/data/q_tables/
 .vscode/
 article/
 ang_article/
+
+# Incoming literature/source files kept local only
+/Literature Review - Matrix 20260524.xlsx
+/1. GRA - Syafiq \[Shared\]-20260525T122622Z-3-001.zip
+/incoming/
