@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -145,6 +145,7 @@ function App(){
   const [activeTab,setActiveTab]=useState('builder');
   const [floorBusy,setFloorBusy]=useState(false);
   const [activePdf,setActivePdf]=useState(null);
+  const mainRef = useRef(null);
 
   useEffect(()=>{ api.loadScenarios().then(setScenarios).catch(()=>{}); },[]);
   useEffect(()=>{
@@ -168,6 +169,9 @@ function App(){
   },[results, speed, replayKey]);
 
   const floorPlan = floorPlanOf(scenario);
+  useEffect(()=>{
+    if(activeTab === 'floor' && mainRef.current) mainRef.current.scrollTop = 0;
+  }, [activeTab, floorPlan?.rendered_image_data_url]);
   const visibleResults = useMemo(()=>results.filter(r=>visible[r.algorithm] && (routeFilter==='all' || r.algorithm===routeFilter)), [results, visible, routeFilter]);
   const pathMap = useMemo(()=>{
     const m={}; visibleResults.forEach(r=>r.path?.forEach((p,i)=>{ if(i>0 && i<r.path.length-1 && i<=pathProgress) (m[key(p)] ||= []).push(r.algorithm); })); return m;
@@ -439,9 +443,8 @@ function App(){
       <section><h2>Scenario I/O</h2><button onClick={exportScenario}>Export JSON</button><label className="fileLabel">Import JSON <input aria-label="Import scenario JSON" type="file" accept="application/json" onChange={importScenario}/></label><button onClick={clearBoard}>Clear board</button><button onClick={clearWalls}>Clear walls/blocked</button><button onClick={clearResults}>Clear results</button><button onClick={undo} disabled={!history.length}>Undo</button><button onClick={redo} disabled={!future.length}>Redo</button>{results.length>0&&<button onClick={exportResults}>Append results CSV</button>}</section>
       <p className="hint">Shortcuts: 1–7 tools, R run selected, C clear results, Cmd/Ctrl+Z undo, Shift+Cmd/Ctrl+Z redo.</p>
     </aside>
-    <main>
-      <header className="topHeader"><div><h2>{scenario.name}</h2><p>Paint cells, then run comparison. Start is green; exits are red. Right-click erases. Grid cap: 80×80.</p></div></header>
-      <StatusPanel />
+    <main ref={mainRef}>
+      <header className="topHeader"><h2>{scenario.name}</h2></header>
       <nav className="tabs" aria-label="Prototype workspace tabs">
         <button className={activeTab==='builder'?'active':''} onClick={()=>setActiveTab('builder')}>Scenario Builder</button>
         <button className={activeTab==='floor'?'active':''} onClick={()=>setActiveTab('floor')}>Floor Plan Planning</button>
@@ -474,15 +477,6 @@ function App(){
       <Comparison results={sortedResults} winner={winner} bestByMetric={bestByMetric} weights={scenario.weights} sort={sort} toggleSort={toggleSort}/>
     </main>
   </div>
-}
-
-function StatusPanel(){
-  return <section className="statusPanel" aria-label="Current prototype status">
-    <div><b>Phase 1 algorithms</b><span>Dijkstra, A*, Weighted A*, and Q-learning are implemented.</span></div>
-    <div><b>Scenario library</b><span>S1-S6 run through the existing comparison engine.</span></div>
-    <div><b>Evidence</b><span>CSV export now includes deltas and reduction percentages.</span></div>
-    <div><b>Phase 2 YOLO</b><span>Not started; camera detection remains parked.</span></div>
-  </section>;
 }
 
 function ScenarioWorkspace(props){
