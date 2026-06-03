@@ -2,7 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { Camera, Eraser, Image as ImageIcon, Plus, Trash2, Video } from 'lucide-react';
 import { api } from './api/navigationApi';
+import {
+  applyVisionCrowdToScenario,
+  coveragePercent,
+  coverageAreaM2,
+  densityFromPeopleCount,
+  densityToCrowdLevel,
+  toggleCoverageCell,
+} from './visionMapping.js';
 import './styles.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -41,6 +50,25 @@ const cellSize = 24;
 const cellGap = 2;
 const sampleFloorPlanUrl = '/sample_floorplan_wikimedia.jpg';
 const sampleFloorPlanSource = 'https://commons.wikimedia.org/wiki/File:Sample_Floorplan.jpg';
+const cameraSourceLabels = { iphone: 'iPhone', cctv: 'CCTV/IP camera', upload: 'Uploaded media' };
+const sampleVisionMedia = [
+  {
+    label: 'Sample photo',
+    fileName: 'ultralytics_bus_people.jpg',
+    url: '/vision_samples/ultralytics_bus_people.jpg',
+    mime: 'image/jpeg',
+    kind: 'image',
+    note: 'street scene with visible people'
+  },
+  {
+    label: 'Sample video',
+    fileName: 'big_city_life_people.webm',
+    url: '/vision_samples/big_city_life_people.webm',
+    mime: 'video/webm',
+    kind: 'video',
+    note: 'short public walking scene'
+  }
+];
 
 function makeGrid(rows=20, cols=30) { return Array.from({length:rows},()=>Array.from({length:cols},()=>({type:'empty', intensity:1}))); }
 function clone(x){ return JSON.parse(JSON.stringify(x)); }
@@ -48,7 +76,38 @@ function defaultScenario(){ return { name:'Custom Scenario', grid: makeGrid(), s
 function key(pos){ return `${pos[0]},${pos[1]}`; }
 function isDirtyScenario(s){ return s.grid.some(row=>row.some(cell=>cell.type!=='empty')) || s.exits.length!==1 || s.start[0]!==10 || s.start[1]!==3; }
 function floorPlanOf(s){ return s.metadata?.floor_plan || null; }
+function visionOf(s){ return s.metadata?.vision_input || { cameras: [] }; }
 function isPassableCell(cell){ return !['wall','blocked'].includes(cell?.type); }
+function tabForScenario(s){ return s.metadata?.vision_input?.cameras?.length ? 'vision' : (s.metadata?.floor_plan ? 'floor' : 'builder'); }
+
+function defaultCoverageCells(rows, cols){
+  const top = Math.max(0, Math.floor(rows / 2) - 2);
+  const left = Math.max(0, Math.floor(cols / 2) - 3);
+  const out = [];
+  for(let r=top; r<Math.min(rows, top + 4); r++) for(let c=left; c<Math.min(cols, left + 6); c++) out.push([r,c]);
+  return out;
+}
+
+function cameraMarkerCell(camera){
+  const cells = camera?.coverage_cells || [];
+  if(camera?.marker_cell) return camera.marker_cell;
+  if(!cells.length) return null;
+  const mid = cells[Math.floor(cells.length / 2)];
+  return mid || null;
+}
+
+function makeCamera(rows, cols, index=1){
+  const coverage = defaultCoverageCells(rows, cols);
+  return {
+    id: `cam-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`,
+    name: `Camera ${index}`,
+    source_type: 'iphone',
+    marker_cell: coverage[Math.floor(coverage.length / 2)] || [0, 0],
+    coverage_cells: coverage,
+    cell_area_m2: 1,
+    notes: 'Prototype camera coverage; click cells to adjust.',
+  };
+}
 
 function nearestEmpty(grid, r, c, exits=[]){
   const exitKeys = new Set(exits.map(key));
@@ -145,6 +204,8 @@ function App(){
   const [activeTab,setActiveTab]=useState('builder');
   const [floorBusy,setFloorBusy]=useState(false);
   const [activePdf,setActivePdf]=useState(null);
+  const [visionBusy,setVisionBusy]=useState(false);
+  const [activeCameraId,setActiveCameraId]=useState(null);
   const mainRef = useRef(null);
 
   useEffect(()=>{ api.loadScenarios().then(setScenarios).catch(()=>{}); },[]);
@@ -169,6 +230,13 @@ function App(){
   },[results, speed, replayKey]);
 
   const floorPlan = floorPlanOf(scenario);
+  const visionInput = visionOf(scenario);
+  const cameras = visionInput.cameras || [];
+  const activeCamera = cameras.find(camera=>camera.id===activeCameraId) || cameras[0] || null;
+  useEffect(()=>{
+    if(cameras.length && !cameras.some(camera=>camera.id===activeCameraId)) setActiveCameraId(cameras[0].id);
+    if(!cameras.length && activeCameraId) setActiveCameraId(null);
+  }, [cameras, activeCameraId]);
   useEffect(()=>{
     if(activeTab === 'floor' && mainRef.current) mainRef.current.scrollTop = 0;
   }, [activeTab, floorPlan?.rendered_image_data_url]);
@@ -212,6 +280,18 @@ function App(){
       const next=clone(prev);
       next.metadata = {...(next.metadata || {})};
       next.metadata.floor_plan = {...(next.metadata.floor_plan || {}), ...patch};
+      return next;
+    });
+    if(clear) setResults([]);
+  }
+  function updateCamera(cameraId, patch, { clear=false, record=false } = {}){
+    setScenario(prev=>{
+      if(record) pushHistory(prev);
+      const next=clone(prev);
+      next.metadata = {...(next.metadata || {})};
+      const current = next.metadata.vision_input || {};
+      const updatedCameras = (current.cameras || []).map(camera=>camera.id===cameraId ? {...camera, ...patch} : camera);
+      next.metadata.vision_input = {...current, cameras: updatedCameras};
       return next;
     });
     if(clear) setResults([]);
@@ -304,6 +384,137 @@ function App(){
     });
   }
   function addHotspots(){ commit(prev=>{ const r=prev.grid.length,c=prev.grid[0].length; for(let i=Math.floor(r*.35);i<Math.floor(r*.65);i++) for(let j=Math.floor(c*.42);j<Math.floor(c*.58);j++) if(prev.grid[i][j].type==='empty') prev.grid[i][j]={type: Math.random()>.5?'risk':'crowd', intensity: 2+Math.floor(Math.random()*2)}; return prev; }); }
+
+  function addCamera(){
+    const camera = makeCamera(scenario.grid.length, scenario.grid[0].length, cameras.length + 1);
+    commit(prev=>{
+      prev.metadata = {...(prev.metadata || {})};
+      const current = prev.metadata.vision_input || {};
+      prev.metadata.vision_input = {...current, cameras: [...(current.cameras || []), camera]};
+      return prev;
+    }, false);
+    setActiveCameraId(camera.id);
+    setActiveTab('vision');
+    setNotice(`${camera.name} added. Click grid cells to edit coverage.`);
+  }
+
+  function removeCamera(cameraId){
+    const camera = cameras.find(item=>item.id===cameraId);
+    commit(prev=>{
+      let next = applyVisionCrowdToScenario(prev, {
+        cameraId,
+        coverageCells: camera?.coverage_cells || [],
+        intensity: 0,
+      });
+      next.metadata = {...(next.metadata || {})};
+      const current = next.metadata.vision_input || {};
+      const remaining = (current.cameras || []).filter(item=>item.id!==cameraId);
+      next.metadata.vision_input = {...current, cameras: remaining};
+      return next;
+    }, true);
+    const remaining = cameras.filter(item=>item.id!==cameraId);
+    setActiveCameraId(remaining[0]?.id || null);
+  }
+
+  function toggleCameraCoverage(r,c){
+    if(!activeCamera) return;
+    updateCamera(activeCamera.id, {
+      coverage_cells: toggleCoverageCell(activeCamera.coverage_cells || [], r, c)
+    }, { record: true });
+  }
+
+  function clearCameraCoverage(){
+    if(!activeCamera) return;
+    updateCamera(activeCamera.id, { coverage_cells: [] }, { record: true });
+  }
+
+  function clearVisionCrowd(){
+    if(!activeCamera) return;
+    commit(prev=>applyVisionCrowdToScenario(prev, {
+      cameraId: activeCamera.id,
+      coverageCells: activeCamera.coverage_cells || [],
+      intensity: 0,
+    }), true);
+    setNotice(`${activeCamera.name} vision crowd cells cleared.`);
+  }
+
+  async function analyzeVisionFile(file){
+    if(!activeCamera){
+      setError('Add a camera coverage label before uploading media.');
+      return;
+    }
+    const coverageCells = activeCamera.coverage_cells || [];
+    const coverageArea = coverageAreaM2(coverageCells, activeCamera.cell_area_m2);
+    if(!coverageCells.length || !coverageArea){
+      setError('Select at least one coverage cell and set a positive cell area before detection.');
+      return;
+    }
+    setVisionBusy(true); setError(''); setNotice('');
+    try{
+      const detectorResult = await api.detectCrowd(file);
+      const density = densityFromPeopleCount(detectorResult.people_count, coverageCells, activeCamera.cell_area_m2);
+      const crowd = densityToCrowdLevel(density);
+      const affectedCells = coverageCells.filter(([r,c])=>!['wall','blocked','risk'].includes(scenario.grid[r]?.[c]?.type)).length;
+      const analysis = {
+        ...detectorResult,
+        camera_id: activeCamera.id,
+        camera_name: activeCamera.name,
+        source_type: activeCamera.source_type,
+        coverage_cell_count: coverageCells.length,
+        affected_cell_count: affectedCells,
+        coverage_area_m2: coverageArea,
+        coverage_percent: coveragePercent(coverageCells, scenario.grid),
+        density,
+        crowd_level: crowd.level,
+        crowd_intensity: crowd.intensity,
+        analyzed_at: new Date().toISOString(),
+      };
+      setScenario(prev=>{
+        pushHistory(prev);
+        let next = applyVisionCrowdToScenario(prev, {
+          cameraId: activeCamera.id,
+          coverageCells,
+          intensity: crowd.intensity,
+        });
+        next.metadata = {...(next.metadata || {})};
+        const current = next.metadata.vision_input || {};
+        next.metadata.vision_input = {
+          ...current,
+          last_analysis: analysis,
+          cameras: (current.cameras || []).map(camera=>camera.id===activeCamera.id ? {...camera, last_analysis: analysis} : camera),
+        };
+        return next;
+      });
+      setResults([]);
+      setNotice(`${detectorResult.people_count} person(s) detected. ${activeCamera.name} marked ${crowd.level} crowd (${density} persons/m²).`);
+    } catch(err){
+      setError(`Crowd detection failed: ${err.message || err}`);
+    } finally {
+      setVisionBusy(false);
+    }
+  }
+
+  async function handleVisionUpload(e){
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if(!file) return;
+    await analyzeVisionFile(file);
+  }
+
+  async function handleVisionSample(sample){
+    try{
+      setVisionBusy(true); setError(''); setNotice(`Loading ${sample.label.toLowerCase()}...`);
+      const res = await fetch(sample.url);
+      if(!res.ok) throw new Error(`Could not load sample media (${res.status})`);
+      const blob = await res.blob();
+      const file = new File([blob], sample.fileName, { type: sample.mime });
+      setVisionBusy(false);
+      await analyzeVisionFile(file);
+    } catch(err){
+      setVisionBusy(false);
+      setError(`Sample media failed: ${err.message || err}`);
+    }
+  }
 
   async function renderPdfBytes(fileName, bytes, pageNumber=1){
     setFloorBusy(true); setError(''); setNotice('');
@@ -422,9 +633,9 @@ function App(){
   async function runSelected(){ const names=algorithms.filter(a=>selected[a]); if(!names.length) return; const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setLoading(true); setError(''); setNotice(''); try{ const out=await api.compareSelected(scenario,names); setResults(out); setVisible(v=>({...v,...Object.fromEntries(out.map(r=>[r.algorithm,true]))})); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
   async function runAll(){ const validation=validateScenario(scenario); if(validation){ setError(validation); return; } setSelected(Object.fromEntries(algorithms.map(a=>[a,true]))); setLoading(true); setError(''); setNotice(''); try{ setResults(await api.compare(scenario)); } catch(e){ setError(String(e.message||e)); } finally{ setLoading(false); } }
   async function exportResults(){ try{ await api.exportResults(scenario, results); setNotice('Results appended to backend/data/experiment_logs.csv'); } catch(e){ setError(String(e.message||e)); } }
-  function loadScenario(idx){ const s=scenarios[idx]; if(s){ pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(s.metadata?.floor_plan ? 'floor' : 'builder'); setActivePdf(null); } }
+  function loadScenario(idx){ const s=scenarios[idx]; if(s){ pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(tabForScenario(s)); setActivePdf(null); setActiveCameraId(s.metadata?.vision_input?.cameras?.[0]?.id || null); } }
   function exportScenario(){ const blob=new Blob([JSON.stringify(scenario,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${scenario.name.replaceAll(' ','_')}.json`; a.click(); }
-  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const s=JSON.parse(t); if(!s.grid||!s.start||!s.exits) throw new Error('Scenario JSON is missing grid/start/exits.'); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(s.metadata?.floor_plan ? 'floor' : 'builder'); setActivePdf(null); setError(''); setNotice('Scenario JSON imported.'); } catch(err){ setError(`Import failed: ${err.message}`); } }); }
+  function importScenario(e){ const f=e.target.files[0]; if(!f) return; f.text().then(t=>{ try{ const s=JSON.parse(t); if(!s.grid||!s.start||!s.exits) throw new Error('Scenario JSON is missing grid/start/exits.'); pushHistory(scenario); setScenario(s); setRows(s.grid.length); setCols(s.grid[0].length); setResults([]); setActiveTab(tabForScenario(s)); setActivePdf(null); setActiveCameraId(s.metadata?.vision_input?.cameras?.[0]?.id || null); setError(''); setNotice('Scenario JSON imported.'); } catch(err){ setError(`Import failed: ${err.message}`); } }); }
   function toggleSort(k){ setSort(s=>s.key===k?{key:k,dir:s.dir==='asc'?'desc':'asc'}:{key:k,dir:higherIsBetter.has(k)?'desc':'asc'}); }
 
   return <div className="app">
@@ -448,10 +659,11 @@ function App(){
       <nav className="tabs" aria-label="Prototype workspace tabs">
         <button className={activeTab==='builder'?'active':''} onClick={()=>setActiveTab('builder')}>Scenario Builder</button>
         <button className={activeTab==='floor'?'active':''} onClick={()=>setActiveTab('floor')}>Floor Plan Planning</button>
+        <button className={activeTab==='vision'?'active':''} onClick={()=>setActiveTab('vision')}>Camera Vision</button>
       </nav>
       {activeTab === 'builder' ? (
         <ScenarioWorkspace scenario={scenario} paint={paint} beginCell={beginCell} enterCell={enterCell} endDrag={endDrag} pathMap={pathMap} mouseDown={mouseDown}/>
-      ) : (
+      ) : activeTab === 'floor' ? (
         <FloorPlanWorkspace
           scenario={scenario}
           floorPlan={floorPlan}
@@ -469,6 +681,27 @@ function App(){
           activePdf={activePdf}
           onPdfPage={changePdfPage}
           floorBusy={floorBusy}
+          runSelected={runSelected}
+          runAll={runAll}
+          loading={loading}
+        />
+      ) : (
+        <VisionWorkspace
+          scenario={scenario}
+          floorPlan={floorPlan}
+          cameras={cameras}
+          activeCamera={activeCamera}
+          activeCameraId={activeCameraId}
+          setActiveCameraId={setActiveCameraId}
+          addCamera={addCamera}
+          removeCamera={removeCamera}
+          updateCamera={updateCamera}
+          toggleCoverage={toggleCameraCoverage}
+          clearCoverage={clearCameraCoverage}
+          clearVisionCrowd={clearVisionCrowd}
+          onUpload={handleVisionUpload}
+          onSample={handleVisionSample}
+          visionBusy={visionBusy}
           runSelected={runSelected}
           runAll={runAll}
           loading={loading}
@@ -529,6 +762,141 @@ function FloorPlanWorkspace({scenario, floorPlan, paint, beginCell, enterCell, e
     <Legend />
     <Grid scenario={scenario} paint={paint} beginCell={beginCell} enterCell={enterCell} endDrag={endDrag} pathMap={pathMap} mouseDown={mouseDown} floorPlan={floorPlan} />
   </section>;
+}
+
+function VisionWorkspace({scenario, floorPlan, cameras, activeCamera, activeCameraId, setActiveCameraId, addCamera, removeCamera, updateCamera, toggleCoverage, clearCoverage, clearVisionCrowd, onUpload, onSample, visionBusy, runSelected, runAll, loading}){
+  const coverageArea = activeCamera ? coverageAreaM2(activeCamera.coverage_cells || [], activeCamera.cell_area_m2) : 0;
+  const coveragePct = activeCamera ? coveragePercent(activeCamera.coverage_cells || [], scenario.grid) : 0;
+  const last = activeCamera?.last_analysis;
+  return <section className="visionPanel">
+    <div className="floorControls">
+      <div>
+        <h2>Camera Vision Input</h2>
+        <p>Label camera coverage on the map, upload an iPhone/CCTV image or short video, then convert detected people into crowd cells for route planning.</p>
+      </div>
+      <div className="floorActions">
+        <button onClick={addCamera}><Plus size={16}/>Add camera</button>
+        <button className="primaryLight" onClick={runSelected} disabled={loading}>Run selected</button>
+        <button onClick={runAll} disabled={loading}>Run all</button>
+      </div>
+    </div>
+    {!cameras.length && <div className="emptyPanel compact">No camera labels yet. Add a camera, then click grid cells to show the area it covers.</div>}
+    <div className="visionLayout">
+      <div className="visionSidebar">
+        <h3>Cameras</h3>
+        <div className="cameraList">
+          {cameras.map(camera=><button key={camera.id} className={camera.id===activeCameraId?'active':''} onClick={()=>setActiveCameraId(camera.id)}>
+            <span>{camera.name}</span>
+            <small>{cameraSourceLabels[camera.source_type] || camera.source_type} • {(camera.coverage_cells || []).length} cells</small>
+          </button>)}
+        </div>
+        {activeCamera && <>
+          <label>Camera name
+            <input value={activeCamera.name} onChange={e=>updateCamera(activeCamera.id, {name:e.target.value})}/>
+          </label>
+          <label>Input type
+            <select value={activeCamera.source_type} onChange={e=>updateCamera(activeCamera.id, {source_type:e.target.value})}>
+              {Object.entries(cameraSourceLabels).map(([value,text])=><option value={value} key={value}>{text}</option>)}
+            </select>
+          </label>
+          <label>Real-world area per grid cell (m²)
+            <input type="number" min="0.1" step="0.1" value={activeCamera.cell_area_m2 ?? 1} onChange={e=>updateCamera(activeCamera.id, {cell_area_m2:Number(e.target.value) || 1}, {clear:true})}/>
+          </label>
+          <div className="visionStats">
+            <span><b>Coverage:</b> {(activeCamera.coverage_cells || []).length} cells</span>
+            <span><b>Coverage %:</b> {formatNumber(coveragePct)}%</span>
+            <span><b>Area:</b> {formatNumber(coverageArea)} m²</span>
+            {last && <span><b>Density:</b> {formatNumber(last.density)} people/m²</span>}
+            {last && <span><b>Crowd:</b> {last.crowd_level} / intensity {last.crowd_intensity}</span>}
+            {last && <span><b>Affected:</b> {last.affected_cell_count} cells</span>}
+          </div>
+          <div className="sampleMedia">
+            {sampleVisionMedia.map(sample=><button key={sample.fileName} onClick={()=>onSample(sample)} disabled={visionBusy}>
+              {sample.kind === 'image' ? <ImageIcon size={16}/> : <Video size={16}/>}
+              <span>{sample.label}</span>
+              <small>{sample.note}</small>
+            </button>)}
+          </div>
+          <label className="uploadButton">Upload iPhone/CCTV photo or video
+            <input type="file" accept="image/*,video/*" capture="environment" onChange={onUpload} disabled={visionBusy}/>
+          </label>
+          <div className="inline">
+            <button onClick={clearCoverage}><Eraser size={16}/>Clear coverage</button>
+            <button onClick={clearVisionCrowd}><Eraser size={16}/>Clear vision crowd</button>
+            <button onClick={()=>removeCamera(activeCamera.id)}><Trash2 size={16}/>Remove camera</button>
+          </div>
+          {visionBusy && <div className="notice">Running person detector...</div>}
+        </>}
+      </div>
+      <div className="visionMap">
+        <h3>Coverage Map</h3>
+        <p className="hint">Click cells to define what this camera can see. The detector count is divided by this mapped area to estimate crowd density.</p>
+        <CameraCoverageGrid scenario={scenario} floorPlan={floorPlan} activeCamera={activeCamera} onToggle={toggleCoverage}/>
+      </div>
+    </div>
+    {last && <DetectionSummary analysis={last}/>}
+  </section>;
+}
+
+function CameraCoverageGrid({scenario, floorPlan, activeCamera, onToggle}){
+  const rows = scenario.grid.length;
+  const cols = scenario.grid[0].length;
+  const width = cols * cellSize + Math.max(cols - 1, 0) * cellGap;
+  const height = rows * cellSize + Math.max(rows - 1, 0) * cellGap;
+  const covered = new Set((activeCamera?.coverage_cells || []).map(key));
+  const marker = cameraMarkerCell(activeCamera);
+  const markerKey = marker ? key(marker) : '';
+  const grid = <div className={`grid coverageGrid ${floorPlan ? 'floorGrid' : ''}`} style={{gridTemplateColumns:`repeat(${cols}, ${cellSize}px)`}}>{scenario.grid.map((row,r)=>row.map((cell,c)=>{
+    const isStart=scenario.start[0]===r&&scenario.start[1]===c;
+    const isExit=scenario.exits.some(e=>e[0]===r&&e[1]===c);
+    const cls = isStart?'start':isExit?'exit':`${cell.type} i${cell.intensity}`;
+    const isCovered = covered.has(`${r},${c}`);
+    const isMarker = markerKey === `${r},${c}`;
+    const label = `${activeCamera?.name || 'Camera'} ${isCovered ? 'covers' : 'does not cover'} row ${r} column ${c}`;
+    return <button key={`${r}-${c}`} aria-label={label} title={label} className={`cell ${cls} ${isCovered?'cameraCovered':''} ${isMarker?'cameraPinCell':''} ${cell.source==='vision'?'visionCrowd':''}`} disabled={!activeCamera} onClick={()=>onToggle(r,c)}>{isCovered && <span className="coverageMark"></span>}{isMarker && <span className="cameraPin"><Camera size={12}/></span>}</button>
+  }))}</div>;
+  if(floorPlan?.rendered_image_data_url){
+    return <div className="gridWrap floorGridWrap">
+      <div className="floorCanvas" style={{width, height}}>
+        <img src={floorPlan.rendered_image_data_url} alt={`${floorPlan.name || 'Uploaded floor plan'} underlay`} style={{opacity: floorPlan.opacity ?? 0.55, objectFit: floorPlan.fit_mode || 'contain'}} />
+        {grid}
+      </div>
+    </div>;
+  }
+  return <div className="gridWrap">{grid}</div>;
+}
+
+function DetectionSummary({analysis}){
+  return <div className="detectionSummary">
+    <div>
+      <h3>Detector Result</h3>
+      <div className="visionStats">
+        <span><b>File:</b> {analysis.file_name || 'uploaded media'}</span>
+        <span><b>Media:</b> {analysis.media_type}</span>
+        <span><b>Model:</b> {analysis.model}</span>
+        <span><b>People:</b> {analysis.people_count}</span>
+        <span><b>Avg confidence:</b> {formatNumber(analysis.confidence_avg)}</span>
+        <span><b>Frames:</b> {analysis.frames_analyzed}</span>
+        <span><b>Peak frame:</b> {analysis.peak_frame_index ?? '—'}</span>
+      </div>
+    </div>
+    <DetectionPreview analysis={analysis}/>
+  </div>;
+}
+
+function DetectionPreview({analysis}){
+  if(!analysis.preview_image_data_url) return <div className="emptyPanel compact">No preview frame returned by detector.</div>;
+  const width = Number(analysis.image_width) || 1;
+  const height = Number(analysis.image_height) || 1;
+  return <div className="detectionPreview">
+    <img src={analysis.preview_image_data_url} alt="Detected people preview"/>
+    {(analysis.detections || []).map((det, idx)=><span key={idx} className="detBox" style={{
+      left: `${(det.x / width) * 100}%`,
+      top: `${(det.y / height) * 100}%`,
+      width: `${(det.width / width) * 100}%`,
+      height: `${(det.height / height) * 100}%`,
+    }}><b>{idx + 1}</b>{formatNumber(det.confidence)}</span>)}
+  </div>;
 }
 
 function Legend(){ return <div className="legend">{tools.map(t=><span key={t}><span className={`swatch ${t}`}></span>{toolLabels[t]}</span>)}{algorithms.map(a=><span key={a}><span className="routeKey" style={{background:pathColors[a]}}></span>{label(a)}</span>)}</div>; }

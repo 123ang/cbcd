@@ -233,7 +233,7 @@ Endpoints:
 - `POST /export-results`
 - `POST /camera/crowd`
 
-`/camera/crowd` is only a Phase 2 stub and returns a message that YOLO crowd detection is parked until Phase 1 is complete.
+`/camera/crowd` accepts multipart image/video upload under `media` and runs the Stage D detector prototype. It now uses Ultralytics `yolov8n.pt` as the primary person detector and falls back to OpenCV HOG if YOLO is unavailable in `auto` mode. It returns media type, model name, image/frame dimensions, people count from the peak frame, average people count, confidence average, bounding boxes, frame summaries, and a preview image data URL. Set `CBCD_DETECTOR_BACKEND=yolo` to force YOLO, `hog` to force HOG, or `auto` for YOLO-primary fallback behavior.
 
 ## Data Model
 
@@ -306,12 +306,13 @@ Q-learning:
 - S4 Blocked exit: 20x30, two exits, blocked cells near one route.
 - S5 Dynamic crowd update: 20x30, 10 crowd cells, simulates crowd update concept without YOLO.
 - S6 Algorithm comparison sweep: 20x30, two exits, mix of wall/risk/crowd cells.
+- S7 YOLO camera crowd update: 20x30 corridor demo with camera-derived critical crowd cells on the shortest route; Dijkstra/A* use the crowded short route, while Weighted A* takes a longer no-crowd detour.
 
 ## Frontend Behavior
 
 The React dashboard is in a single main file and supports:
 
-- Top-level tabs for Scenario Builder and Floor Plan Planning.
+- Top-level tabs for Scenario Builder, Floor Plan Planning, and Camera Vision.
 - Grid map editing with tools: Empty, Wall, Start, Exit, Risk, Crowd, Blocked.
 - Risk/crowd intensity slider.
 - Start and exit dragging.
@@ -332,6 +333,7 @@ The React dashboard is in a single main file and supports:
 - Comparison evidence fields for delta distance/risk vs Dijkstra and risk/crowd reduction percentages.
 - Recommendation panel based on lowest `total_cost`, with shortest-route and safer-route explanation text.
 - Manual floor-plan planning overlay: PNG/JPG upload, PDF rendering with `pdfjs-dist`, sample floor-plan loader, opacity, fit mode, clear/reset controls, and scenario metadata preservation under `metadata.floor_plan`.
+- Stage D Camera Vision workflow: camera labels, source type selection, camera marker on the coverage map, clickable grid coverage cells, coverage percentage, per-cell real-world area, sample photo/video buttons, iPhone/CCTV photo or short-video upload, detector preview with bounding boxes, density calculation, crowd-level mapping, and vision-derived crowd-cell application to the route grid.
 
 Default frontend API base is `http://localhost:8001`, unless `VITE_API_BASE` is set.
 
@@ -342,6 +344,13 @@ Floor-plan metadata shape:
 - `metadata.floor_plan.rendered_image_data_url`: image data used as the grid underlay.
 - `metadata.floor_plan.pdf_page` and `pdf_page_count` for PDFs.
 - `metadata.floor_plan.opacity`, `fit_mode`, `rendered_width`, `rendered_height`, optional `source_url`.
+
+Vision metadata shape:
+
+- `metadata.vision_input.cameras[]`: camera labels with `id`, `name`, `source_type`, `coverage_cells`, `cell_area_m2`, optional `notes`, and `last_analysis`.
+- `metadata.vision_input.last_analysis`: latest detector result, including `people_count`, `average_people_count`, `detections`, `density`, `coverage_area_m2`, `crowd_level`, `crowd_intensity`, `model`, `media_type`, and `preview_image_data_url`.
+- Vision-applied grid cells are stored as normal `crowd` cells with extra `source: "vision"` and `camera_id`; pathfinding ignores the extra fields and uses the existing crowd intensity.
+- Local sample media lives under `frontend/public/vision_samples/` for the app and `incoming/vision_examples/` for local testing; both folders are git-ignored.
 
 ## Local Run Commands
 
@@ -377,6 +386,7 @@ Frontend:
 
 ```bash
 cd /Users/123ang/Desktop/Websites/cbcd/frontend
+npm test
 npm run build
 ```
 
@@ -393,6 +403,35 @@ Stage A-C implementation note:
 - Added `pdfjs-dist` dependency for client-side PDF page rendering.
 - Downloaded the Wikimedia Commons public-domain `Sample Floorplan.jpg` test asset.
 
+2026-06-02 Stage C verification and Stage D planning:
+
+- Stage C Floor Plan Planning was confirmed present in the current frontend: separate tab, image/PDF upload, sample floor plan loader, opacity, fit mode, clear/reset controls, manual grid tracing over the image, run selected/all, and floor-plan metadata preservation under `metadata.floor_plan`.
+- Verification run: backend `tests.py` passed, backend `smoke_test.py` passed, backend `run_experiments.py` wrote 72 rows, and frontend `npm run build` passed. Vite still warns that the PDF worker chunk is over 500 kB, which is expected from `pdfjs-dist`.
+- Stage D iPhone computer-vision plan was added at `docs/stage_d_iphone_computer_vision_plan.md`.
+- Recommended Stage D path: start with iPhone Safari image/video upload into the existing web app, then map detections to floor-plan grid cells; use Continuity Camera only for a live Mac demo; build a native iOS AVFoundation/Vision/Core ML app only after the web detection pipeline proves the research logic. LiDAR should be treated as optional on supported devices, not assumed for all iPhones.
+
+2026-06-02 Stage D implementation:
+
+- Replaced the `/camera/crowd` stub with a real upload detector endpoint using `opencv-python-headless`, `numpy`, and `python-multipart`.
+- Added `backend/utils/crowd_detector.py` for image/video decoding, YOLO/HOG person detection, peak-frame summarization, preview-frame data URL generation, and crowd-density category mapping.
+- Added `backend/test_crowd_detector.py`; it verifies density categories, peak-frame summarization, and multipart endpoint upload using a generated blank JPEG.
+- Added frontend `Camera Vision` tab and `frontend/src/visionMapping.js`. The tab lets the user add/select cameras, label coverage cells on the floor-plan grid, upload iPhone/CCTV photo or short video, inspect detector boxes/counts, calculate density, apply crowd cells, and rerun existing algorithms.
+- Added frontend `npm test` using Node's built-in test runner for density/category and coverage-to-grid mapping.
+
+2026-06-02 YOLO upgrade:
+
+- Installed Ultralytics YOLO dependencies in the backend venv and added `ultralytics>=8.4.0` to `backend/requirements.txt`.
+- `backend/utils/crowd_detector.py` now loads `yolov8n.pt` by default, filters detections to COCO person class `0`, and reports `ultralytics-yolov8n.pt-person` when YOLO is used.
+- First YOLO smoke test downloaded `backend/yolov8n.pt`; `.gitignore` ignores backend `.pt` model files.
+- Added a unit test for YOLO result parsing so non-person classes are ignored.
+
+2026-06-02 Stage D.2 demo polish:
+
+- Copied the downloaded sample photo/video into ignored `frontend/public/vision_samples/` so the Camera Vision tab can load them through normal frontend fetches.
+- Added sample photo and sample video buttons to the Camera Vision panel. They call the same `/camera/crowd` endpoint as user uploads.
+- Added camera marker and coverage percentage display to the camera coverage map.
+- Added `S7 YOLO camera crowd update` to built-in scenarios as the main Stage D evidence scenario.
+
 ## Prototype Development Priorities
 
 Keep Phase 1 demo-ready before expanding:
@@ -400,6 +439,6 @@ Keep Phase 1 demo-ready before expanding:
 - Preserve the core thesis claim: shortest route is not always safest.
 - Keep Weighted A* as the most explainable risk-aware algorithm.
 - Keep Q-learning as a comparison method unless improving RL is the explicit task.
-- Do not start real YOLO/Phase 2 work unless asked or unless Phase 1 is accepted as complete.
-- If adding Phase 2 later, connect detected crowd count/density into existing `crowd` cell intensities or route-cost weights instead of creating a separate unrelated flow.
+- Current Stage D detector is YOLO-primary using Ultralytics `yolov8n.pt`, with HOG fallback. For dense crowd occlusion, YOLO may still undercount; future work can replace or extend it with density-map crowd counting.
+- If adding streaming, custom YOLO training, or density-map crowd counting later, keep the same pattern: connect detected crowd count/density into existing `crowd` cell intensities or route-cost weights instead of creating a separate unrelated flow.
 - When changing metrics or weights, also update `run_experiments.py`, `RouteResult`, frontend table columns, CSV export fields, and this file.

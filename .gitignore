@@ -8,9 +8,12 @@ backend/.venv/
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/public/vision_samples/
 
 # Generated experiment artifacts
 backend/data/q_tables/
+backend/data/models/
+backend/*.pt
 
 # OS / editor
 .DS_Store

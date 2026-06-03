@@ -59,6 +59,11 @@ input::file-selector-button {
   font-weight: 700;
 }
 
+button svg {
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: .45;
@@ -458,6 +463,197 @@ section h2:first-child { margin-top: 0; }
 .floorGrid .cell.start { background: rgba(34, 197, 94, .9); }
 .floorGrid .cell.exit { background: rgba(239, 68, 68, .9); }
 
+.visionPanel {
+  padding: 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 18px;
+  background: #f0fdf4;
+}
+
+.visionLayout {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.visionSidebar,
+.visionMap,
+.detectionSummary {
+  padding: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 8px 24px #0f172a0f;
+}
+
+.visionSidebar h3,
+.visionMap h3,
+.detectionSummary h3 {
+  margin: 0 0 8px;
+  color: #172033;
+  font-size: 15px;
+}
+
+.visionSidebar input,
+.visionSidebar select {
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.cameraList {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cameraList button {
+  display: grid;
+  justify-items: start;
+  margin: 0;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.cameraList button.active {
+  border-color: #16a34a;
+  color: white;
+  background: #15803d;
+}
+
+.cameraList small {
+  margin-top: 3px;
+  font-weight: 600;
+  opacity: .82;
+}
+
+.sampleMedia {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.sampleMedia button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  justify-items: start;
+  column-gap: 8px;
+  margin: 0;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.sampleMedia small {
+  grid-column: 2;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.visionStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.visionStats span {
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #334155;
+  background: #f1f5f9;
+  font-size: 12px;
+}
+
+.coverageGrid .cell {
+  overflow: hidden;
+}
+
+.coverageGrid .cell.cameraCovered {
+  border-color: #16a34a;
+  box-shadow: inset 0 0 0 2px #22c55e, 0 0 0 1px #166534;
+}
+
+.coverageGrid .cell.cameraPinCell {
+  z-index: 2;
+}
+
+.cameraPin {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  color: white;
+  background: #15803d;
+  box-shadow: 0 0 0 2px white;
+  pointer-events: none;
+}
+
+.coverageGrid .cell.visionCrowd {
+  box-shadow: inset 0 0 0 2px #0ea5e9, 0 0 0 1px #075985;
+}
+
+.coverageMark {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #16a34a;
+  pointer-events: none;
+}
+
+.detectionSummary {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.detectionPreview {
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #0f172a;
+}
+
+.detectionPreview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.detBox {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 22px;
+  min-height: 22px;
+  border: 2px solid #facc15;
+  color: #111827;
+  background: rgba(250, 204, 21, .24);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.detBox b {
+  padding: 1px 4px;
+  color: #111827;
+  background: #facc15;
+}
+
 .emptyPanel,
 .results {
   margin-top: 18px;
@@ -545,6 +741,8 @@ aside .hint { color: #cbd5e1; }
   .floorControls { grid-template-columns: 1fr; }
   .floorActions { justify-content: flex-start; }
   .floorSettings { grid-template-columns: 1fr; }
+  .visionLayout,
+  .detectionSummary { grid-template-columns: 1fr; }
 }
 
 @media(max-width: 1000px) {

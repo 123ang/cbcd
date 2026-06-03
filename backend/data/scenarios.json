@@ -14796,5 +14796,2583 @@
     "metadata": {
       "purpose": "compare all metrics"
     }
+  },
+  {
+    "name": "S7 YOLO camera crowd update",
+    "grid": [
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "crowd",
+          "intensity": 3,
+          "source": "vision",
+          "camera_id": "cam-yolo-demo"
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "empty",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ],
+      [
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        },
+        {
+          "type": "wall",
+          "intensity": 1
+        }
+      ]
+    ],
+    "start": [
+      10,
+      2
+    ],
+    "exits": [
+      [
+        10,
+        27
+      ]
+    ],
+    "weights": {
+      "alpha": 1,
+      "beta": 3,
+      "gamma": 5,
+      "delta": 10,
+      "epsilon": 2,
+      "heuristic_weight": 1
+    },
+    "metadata": {
+      "vision_input": {
+        "last_analysis": {
+          "file_name": "big_city_life_people.webm",
+          "content_type": "video/webm",
+          "media_type": "video",
+          "model": "ultralytics-yolov8n.pt-person",
+          "image_width": 640,
+          "image_height": 360,
+          "frames_analyzed": 12,
+          "people_count": 8,
+          "average_people_count": 5.75,
+          "peak_frame_index": 120,
+          "confidence_avg": 0.709,
+          "detections": [],
+          "frame_results": [],
+          "preview_image_data_url": "",
+          "camera_id": "cam-yolo-demo",
+          "camera_name": "Camera 1 - Main corridor",
+          "source_type": "iphone",
+          "coverage_cell_count": 7,
+          "affected_cell_count": 7,
+          "coverage_area_m2": 1.75,
+          "coverage_percent": 11.7,
+          "density": 4.571,
+          "crowd_level": "critical",
+          "crowd_intensity": 3,
+          "analyzed_at": "2026-06-02T00:00:00.000Z"
+        },
+        "cameras": [
+          {
+            "id": "cam-yolo-demo",
+            "name": "Camera 1 - Main corridor",
+            "source_type": "iphone",
+            "marker_cell": [
+              10,
+              15
+            ],
+            "coverage_cells": [
+              [
+                10,
+                12
+              ],
+              [
+                10,
+                13
+              ],
+              [
+                10,
+                14
+              ],
+              [
+                10,
+                15
+              ],
+              [
+                10,
+                16
+              ],
+              [
+                10,
+                17
+              ],
+              [
+                10,
+                18
+              ]
+            ],
+            "cell_area_m2": 0.25,
+            "notes": "Demo camera: YOLO sample video marks the short corridor as critical crowd.",
+            "last_analysis": {
+              "file_name": "big_city_life_people.webm",
+              "content_type": "video/webm",
+              "media_type": "video",
+              "model": "ultralytics-yolov8n.pt-person",
+              "image_width": 640,
+              "image_height": 360,
+              "frames_analyzed": 12,
+              "people_count": 8,
+              "average_people_count": 5.75,
+              "peak_frame_index": 120,
+              "confidence_avg": 0.709,
+              "detections": [],
+              "frame_results": [],
+              "preview_image_data_url": "",
+              "camera_id": "cam-yolo-demo",
+              "camera_name": "Camera 1 - Main corridor",
+              "source_type": "iphone",
+              "coverage_cell_count": 7,
+              "affected_cell_count": 7,
+              "coverage_area_m2": 1.75,
+              "coverage_percent": 11.7,
+              "density": 4.571,
+              "crowd_level": "critical",
+              "crowd_intensity": 3,
+              "analyzed_at": "2026-06-02T00:00:00.000Z"
+            }
+          }
+        ]
+      }
+    }
   }
 ]

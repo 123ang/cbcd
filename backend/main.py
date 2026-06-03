@@ -4,10 +4,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from algorithms.pathfinding import astar, dijkstra, qlearning, weighted_astar
+from utils.crowd_detector import analyze_media_upload
 from utils.models import RouteResult, ScenarioRequest
 
 app = FastAPI(title="CBCD Phase 1 Risk-Aware Navigation API")
@@ -138,5 +139,14 @@ def export_results(payload: dict):
     return {"saved": True, "path": str(EXPERIMENT_LOG), "rows": len(rows)}
 
 @app.post("/camera/crowd")
-def camera_crowd_stub():
-    return {"phase": "Phase 2 stub", "message": "YOLO crowd detection is intentionally parked until Phase 1 is complete."}
+async def camera_crowd(media: UploadFile = File(...)):
+    raw = await media.read()
+    try:
+        result = analyze_media_upload(raw, media.filename or "upload", media.content_type or "")
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    result["file_name"] = media.filename
+    result["content_type"] = media.content_type
+    return result
