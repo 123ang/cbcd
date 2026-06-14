@@ -18,8 +18,8 @@ Phase 1 is a working React + FastAPI prototype for:
 - Manual floor-plan overlay planning with PNG/JPG upload, PDF page rendering, opacity/fit controls, and scenario JSON preservation.
 - Adjustable risk/crowd intensity levels 1–3.
 - Weight controls for `alpha`, `beta`, `gamma`, `delta`, `epsilon`.
-- Backend endpoints for Dijkstra, A*, Weighted A*, real Q-learning, selected comparison, result export, and scenario I/O.
-- Q-learning uses epsilon-greedy training, the proposal reward table, deterministic scenario seeding, and persisted Q-tables under `backend/data/q_tables/`.
+- Backend endpoints for Dijkstra, A*, Weighted A*, real Q-learning, selected comparison, operator-only result export, and scenario I/O.
+- Q-learning uses epsilon-greedy training, the proposal reward table, and deterministic scenario seeding. Q-table disk persistence is opt-in and capped.
 - Built-in demo scenarios S1–S6 in `backend/data/scenarios.json`.
 - Comparison table with distance, risk, crowd, total cost, time, nodes expanded, delta vs Dijkstra, risk/crowd reduction percentages, best metric highlights, and winning row.
 - Route overlay toggles, selected-algorithm execution, replay animation speed, and sortable comparison table.
@@ -39,6 +39,12 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
+The public compute and camera routes are rate-limited. `/save-scenario` and
+`/export-results` fail closed unless `CBCD_API_KEY` is configured and supplied
+as `X-API-Key`. See `backend/.env.example` for the available controls. The
+browser dashboard downloads result CSV files locally, so no operator key is
+embedded in the frontend.
+
 ## Run frontend
 
 ```bash
@@ -55,12 +61,16 @@ Then open the Vite URL, usually <http://localhost:5173>.
 cd backend
 PYTHONPATH=. .venv/bin/python smoke_test.py
 PYTHONPATH=. .venv/bin/python tests.py
+PYTHONPATH=. .venv/bin/python -m unittest -v test_api_safety.py
+PYTHONPATH=. .venv/bin/python test_crowd_detector.py
 PYTHONPATH=. .venv/bin/python run_experiments.py
 
 cd ../frontend
+npm test
 npm run build
 ```
 
 ## Notes
 
-Phase 2 / YOLO is intentionally parked until Phase 1 is complete and demo-ready.
+Camera crowd analysis prefers YOLO and falls back to HOG when configured with
+`CBCD_DETECTOR_BACKEND=auto`.

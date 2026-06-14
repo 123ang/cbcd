@@ -1,23 +1,46 @@
 import csv
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from algorithms.pathfinding import astar, dijkstra, qlearning, weighted_astar
-from utils.crowd_detector import analyze_media_upload
-from utils.models import RouteResult, ScenarioRequest
+from utils.crowd_detector import MAX_UPLOAD_BYTES, analyze_media_upload
+from utils.models import CompareSelectedRequest, RouteResult, ScenarioRequest
+from utils.request_security import (
+    compute_rate_limit,
+    rate_limiter,
+    require_operator_api_key,
+    upload_rate_limit,
+    write_rate_limit,
+)
 
 app = FastAPI(title="CBCD Phase 1 Risk-Aware Navigation API")
+app.state.rate_limiter = rate_limiter
+
+
+def _allowed_origins():
+    configured = os.getenv(
+        "CBCD_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,https://cbcd.suntzutechnologies.com",
+    )
+    return [
+        origin.strip()
+        for origin in configured.split(",")
+        if origin.strip() and origin.strip() != "*"
+    ]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
 DATA_DIR = Path(__file__).parent / "data"
 SCENARIOS = DATA_DIR / "scenarios.json"
@@ -46,33 +69,75 @@ def _with_dijkstra_deltas(results: List[RouteResult], baseline: RouteResult):
 def health():
     return {"ok": True, "phase": "phase_1"}
 
-@app.post("/run-dijkstra", response_model=RouteResult)
+@app.post(
+    "/run-dijkstra",
+    response_model=RouteResult,
+    dependencies=[Depends(compute_rate_limit)],
+)
 def run_dijkstra(req: ScenarioRequest):
     return dijkstra(req)
 
-@app.post("/run-astar", response_model=RouteResult)
+@app.post(
+    "/run-astar",
+    response_model=RouteResult,
+    dependencies=[Depends(compute_rate_limit)],
+)
 def run_astar(req: ScenarioRequest):
     return astar(req)
 
-@app.post("/run-weighted-astar", response_model=RouteResult)
+@app.post(
+    "/run-weighted-astar",
+    response_model=RouteResult,
+    dependencies=[Depends(compute_rate_limit)],
+)
 def run_weighted_astar(req: ScenarioRequest):
     return weighted_astar(req)
 
-@app.post("/run-qlearning", response_model=RouteResult)
+def _validate_qlearning_budget(req: ScenarioRequest):
+    try:
+        max_cells = int(os.getenv("CBCD_MAX_QLEARNING_CELLS", "2500"))
+    except ValueError:
+        max_cells = 2500
+    max_cells = max(max_cells, 1)
+    cells = len(req.grid) * len(req.grid[0])
+    if cells > max_cells:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Q-learning is limited to {max_cells} grid cells; received {cells}.",
+        )
+
+
+@app.post(
+    "/run-qlearning",
+    response_model=RouteResult,
+    dependencies=[Depends(compute_rate_limit)],
+)
 def run_qlearning(req: ScenarioRequest):
+    _validate_qlearning_budget(req)
     return qlearning(req)
 
-@app.post("/compare-algorithms", response_model=List[RouteResult])
+@app.post(
+    "/compare-algorithms",
+    response_model=List[RouteResult],
+    dependencies=[Depends(compute_rate_limit)],
+)
 def compare_algorithms(req: ScenarioRequest):
+    _validate_qlearning_budget(req)
     results = [fn(req) for fn in ALGORITHMS.values()]
     baseline = next((result for result in results if result.algorithm == "dijkstra"), results[0])
     return _with_dijkstra_deltas(results, baseline)
 
-@app.post("/compare-selected", response_model=List[RouteResult])
-def compare_selected(payload: dict):
-    req = ScenarioRequest(**payload["scenario"])
-    selected = payload.get("algorithms") or list(ALGORITHMS)
-    results = [ALGORITHMS[name](req) for name in selected if name in ALGORITHMS]
+@app.post(
+    "/compare-selected",
+    response_model=List[RouteResult],
+    dependencies=[Depends(compute_rate_limit)],
+)
+def compare_selected(payload: CompareSelectedRequest):
+    req = payload.scenario
+    selected = payload.algorithms
+    if "qlearning" in selected:
+        _validate_qlearning_budget(req)
+    results = [ALGORITHMS[name](req) for name in selected]
     baseline = next((result for result in results if result.algorithm == "dijkstra"), None) or dijkstra(req)
     return _with_dijkstra_deltas(results, baseline)
 
@@ -82,7 +147,10 @@ def load_scenarios():
         return []
     return json.loads(SCENARIOS.read_text())
 
-@app.post("/save-scenario")
+@app.post(
+    "/save-scenario",
+    dependencies=[Depends(write_rate_limit), Depends(require_operator_api_key)],
+)
 def save_scenario(req: ScenarioRequest):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     scenarios = json.loads(SCENARIOS.read_text()) if SCENARIOS.exists() else []
@@ -91,7 +159,10 @@ def save_scenario(req: ScenarioRequest):
     SCENARIOS.write_text(json.dumps(scenarios, indent=2))
     return {"saved": True, "count": len(scenarios)}
 
-@app.post("/export-results")
+@app.post(
+    "/export-results",
+    dependencies=[Depends(write_rate_limit), Depends(require_operator_api_key)],
+)
 def export_results(payload: dict):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     rows = payload.get("results", [])
@@ -138,9 +209,29 @@ def export_results(payload: dict):
             })
     return {"saved": True, "path": str(EXPERIMENT_LOG), "rows": len(rows)}
 
-@app.post("/camera/crowd")
+async def _read_upload_limited(media: UploadFile):
+    if media.size is not None and media.size > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Upload is larger than the 50 MB prototype limit.",
+        )
+
+    chunks = []
+    total = 0
+    while chunk := await media.read(1024 * 1024):
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="Upload is larger than the 50 MB prototype limit.",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@app.post("/camera/crowd", dependencies=[Depends(upload_rate_limit)])
 async def camera_crowd(media: UploadFile = File(...)):
-    raw = await media.read()
+    raw = await _read_upload_limited(media)
     try:
         result = analyze_media_upload(raw, media.filename or "upload", media.content_type or "")
     except RuntimeError as exc:

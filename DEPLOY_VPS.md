@@ -118,6 +118,27 @@ Stop the manual server with `Ctrl+C`.
 
 ## 4. Create a systemd service for backend
 
+Create a root-owned environment file first:
+
+```bash
+sudo sh -c 'umask 077; cat > /etc/cbcd.env' <<'EOF'
+CBCD_API_KEY=replace-with-output-from-openssl-rand-hex-32
+CBCD_CORS_ORIGINS=https://cbcd.suntzutechnologies.com
+CBCD_TRUSTED_PROXY_IPS=127.0.0.1,::1
+CBCD_COMPUTE_RATE_LIMIT=30
+CBCD_UPLOAD_RATE_LIMIT=6
+CBCD_WRITE_RATE_LIMIT=10
+CBCD_MAX_QLEARNING_CELLS=2500
+CBCD_PERSIST_Q_TABLES=false
+CBCD_Q_TABLE_MAX_FILES=50
+EOF
+sudo chmod 600 /etc/cbcd.env
+```
+
+Generate the API key with `openssl rand -hex 32` and replace the placeholder.
+The key is only for operator calls to `/save-scenario` and `/export-results`;
+never place it in a `VITE_*` variable or public browser bundle.
+
 ```bash
 sudo nano /etc/systemd/system/cbcd-api.service
 ```
@@ -133,6 +154,7 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/root/projects/cbcd/backend
+EnvironmentFile=/etc/cbcd.env
 ExecStart=/root/projects/cbcd/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 4017
 Restart=always
 RestartSec=3
@@ -358,6 +380,10 @@ cd backend
 source .venv/bin/activate
 uvicorn main:app --reload --port 8001
 ```
+
+Server-side save/export routes remain disabled until you export
+`CBCD_API_KEY`. Normal route comparison, camera analysis, and browser-side CSV
+downloads do not need that key.
 
 Run frontend locally:
 

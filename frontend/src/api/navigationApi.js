@@ -20,7 +20,6 @@ export const api = {
   compareSelected: (scenario, algorithms) => post('/compare-selected', { scenario, algorithms }),
   run: (algorithm, scenario) => post(`/run-${endpoint[algorithm]}`, scenario),
   detectCrowd: (file) => postFile('/camera/crowd', file),
-  exportResults: (scenario, results) => post('/export-results', { scenario_name: scenario.name, results }),
   loadScenarios: async () => {
     const res = await fetch(`${API_BASE}/load-scenario`);
     if (!res.ok) throw new Error(await res.text());

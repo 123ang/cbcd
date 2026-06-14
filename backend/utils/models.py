@@ -1,7 +1,12 @@
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Annotated, Any, Dict, List, Literal, Optional
 
-Position = List[int]
+from pydantic import BaseModel, Field, StrictInt, model_validator
+
+MAX_GRID_ROWS = 80
+MAX_GRID_COLS = 80
+Position = Annotated[List[StrictInt], Field(min_length=2, max_length=2)]
+GridRow = Annotated[List[Dict[str, Any]], Field(min_length=1, max_length=MAX_GRID_COLS)]
+AlgorithmName = Literal["dijkstra", "astar", "weighted_astar", "qlearning"]
 
 class Weights(BaseModel):
     # Cost-model coefficients. Keep alpha as distance weight only.
@@ -16,11 +21,44 @@ class Weights(BaseModel):
 
 class ScenarioRequest(BaseModel):
     name: str = "Untitled scenario"
-    grid: List[List[Dict[str, Any]]]
+    grid: Annotated[List[GridRow], Field(min_length=1, max_length=MAX_GRID_ROWS)]
     start: Position
-    exits: List[Position]
+    exits: Annotated[List[Position], Field(min_length=1, max_length=MAX_GRID_ROWS * MAX_GRID_COLS)]
     weights: Weights = Field(default_factory=Weights)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_grid_and_route_points(self):
+        columns = len(self.grid[0])
+        if any(len(row) != columns for row in self.grid):
+            raise ValueError("Grid rows must all have the same number of columns.")
+
+        rows = len(self.grid)
+
+        def validate_position(position, label):
+            row, column = position
+            if not (0 <= row < rows and 0 <= column < columns):
+                raise ValueError(f"{label} must be inside the grid.")
+            if self.grid[row][column].get("type", "empty") in {"wall", "blocked"}:
+                raise ValueError(f"{label} must be on a passable cell.")
+
+        validate_position(self.start, "Start")
+        for index, exit_position in enumerate(self.exits, start=1):
+            validate_position(exit_position, f"Exit {index}")
+        return self
+
+
+class CompareSelectedRequest(BaseModel):
+    scenario: ScenarioRequest
+    algorithms: Annotated[
+        List[AlgorithmName],
+        Field(
+            default_factory=lambda: ["dijkstra", "astar", "weighted_astar", "qlearning"],
+            min_length=1,
+            max_length=4,
+        ),
+    ]
+
 
 class RouteResult(BaseModel):
     algorithm: str

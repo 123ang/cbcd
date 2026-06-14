@@ -1,6 +1,7 @@
 import hashlib
 import heapq
 import json
+import os
 import random
 import time
 from math import inf
@@ -10,6 +11,37 @@ from utils.grid import cell_cost, cell_type, in_bounds, intensity, manhattan_to_
 from utils.models import RouteResult
 
 ACTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+Q_TABLE_DIR = Path(__file__).resolve().parents[1] / "data" / "q_tables"
+
+
+def _env_enabled(name):
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def persist_q_table(scenario_hash, payload):
+    if not _env_enabled("CBCD_PERSIST_Q_TABLES"):
+        return False
+    try:
+        max_files = max(1, int(os.getenv("CBCD_Q_TABLE_MAX_FILES", "50")))
+    except ValueError:
+        max_files = 50
+
+    try:
+        Q_TABLE_DIR.mkdir(parents=True, exist_ok=True)
+        target = Q_TABLE_DIR / f"{scenario_hash}.json"
+        temporary = target.with_suffix(".tmp")
+        temporary.write_text(json.dumps(payload))
+        temporary.replace(target)
+
+        files = sorted(
+            Q_TABLE_DIR.glob("*.json"),
+            key=lambda path: (path.stat().st_mtime_ns, path.name),
+        )
+        for stale in files[:-max_files]:
+            stale.unlink(missing_ok=True)
+    except OSError:
+        return False
+    return True
 
 
 def _search(req, algorithm: str, weighted: bool = False, heuristic: bool = False):
@@ -185,9 +217,11 @@ def qlearning(req):
         failure_reason = "Greedy policy reconstruction looped, got stuck, or did not reach an exit."
         path = []
     metrics = path_metrics(req.grid, path, req.exits, req.weights)
-    q_dir = Path(__file__).resolve().parents[1] / "data" / "q_tables"
-    q_dir.mkdir(parents=True, exist_ok=True)
-    (q_dir / f"{_scenario_hash(req)}.json").write_text(json.dumps({"q": q, "episodes": episodes, "success": success}))
+    persisted = persist_q_table(
+        _scenario_hash(req),
+        {"q": q, "episodes": episodes, "success": success},
+    )
+    storage_note = "Q-table persisted by scenario hash." if persisted else "Q-table kept in memory."
     return RouteResult(
         algorithm="qlearning",
         success=success,
@@ -204,7 +238,7 @@ def qlearning(req):
         exit_access_score=metrics.get("exit_access_score"),
         explanation=(
             f"Q-learning with potential-based reward shaping trained {episodes} episodes "
-            f"({nodes} training steps); Q-table persisted by scenario hash."
+            f"({nodes} training steps); {storage_note}"
             if success else
             f"Q-learning with potential-based reward shaping trained {episodes} episodes "
             f"({nodes} training steps) but failed: {failure_reason}"
