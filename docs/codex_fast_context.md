@@ -432,6 +432,20 @@ Stage A-C implementation note:
 - Added camera marker and coverage percentage display to the camera coverage map.
 - Added `S7 YOLO camera crowd update` to built-in scenarios as the main Stage D evidence scenario.
 
+2026-06-26 Stage D evidence pack:
+
+- Added `docs/stage_d_demo_evidence.md`.
+- Captured screenshots under `docs/assets/stage_d_demo/`: camera coverage, YOLO sample-video detection, and S7 route comparison.
+- Current S7 evidence: Dijkstra/A*/Q-learning use the 25-step route with crowd score 21 and total cost 88; Weighted A* uses a 35-step crowd-free detour with total cost 35 and 100% crowd reduction.
+
+2026-08-16 layman summary:
+
+- Added `docs/smart_evacuation_route_planner_summary.md`, a two-page plain-English explanation based on the current React and FastAPI implementation.
+- Added the formatted Word version at `docs/Smart_Evacuation_Route_Planner_Summary.docx`; it uses a two-column professional brief layout and renders to exactly two pages.
+- The reader-facing name in this summary is **Smart Evacuation Route Planner**. Existing technical identifiers such as `CBCD_*` environment variables, deployment paths, and the current domain remain unchanged.
+- It explains the three workspaces, floor-plan tracing, YOLO image/video counting, crowd-density mapping, four routing methods, comparison results, the S7 example, and current prototype limitations.
+- No prototype behavior or interfaces changed in this documentation update.
+
 ## Prototype Development Priorities
 
 Keep Phase 1 demo-ready before expanding:
