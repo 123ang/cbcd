@@ -3,6 +3,7 @@
 import builtins
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -33,6 +34,26 @@ def test_unsupported_cv2_cpu_does_not_break_module_import():
         raise AssertionError("Camera analysis must report unavailable dependencies")
 
 
+def test_module_import_does_not_load_yolo():
+    module_path = Path(__file__).parent / "utils" / "crowd_detector.py"
+    spec = importlib.util.spec_from_file_location("crowd_detector_lazy_yolo", module_path)
+    module = importlib.util.module_from_spec(spec)
+    real_import = builtins.__import__
+
+    def import_without_loading_yolo(name, *args, **kwargs):
+        if name in {"cv2", "numpy"}:
+            return SimpleNamespace()
+        if name == "ultralytics":
+            raise AssertionError("YOLO must load only when camera analysis requests it")
+        return real_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=import_without_loading_yolo):
+        spec.loader.exec_module(module)
+
+    assert module.YOLO is None
+
+
 if __name__ == "__main__":
     test_unsupported_cv2_cpu_does_not_break_module_import()
+    test_module_import_does_not_load_yolo()
     print("optional vision import test passed")

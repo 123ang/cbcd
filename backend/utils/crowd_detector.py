@@ -16,12 +16,6 @@ os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "Ultr
 os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "matplotlib"))
 
 YOLO = None
-# ponytail: skip YOLO when its OpenCV prerequisite failed; restore vision with compatible binaries.
-if cv2 is not None and np is not None:
-    try:
-        from ultralytics import YOLO
-    except (ImportError, RuntimeError):
-        pass
 
 HOG_MODEL_NAME = "opencv-hog-default-people-detector"
 DEFAULT_YOLO_MODEL = "yolov8n.pt"
@@ -69,8 +63,14 @@ def _hog_detector():
 
 
 def _yolo_model(model_name: Optional[str] = None):
+    global YOLO
     if YOLO is None:
-        raise RuntimeError("Ultralytics YOLO is not installed.")
+        # ponytail: defer heavy YOLO/Torch import until camera use so API startup stays fast.
+        try:
+            from ultralytics import YOLO as yolo_class
+        except (ImportError, RuntimeError) as exc:
+            raise RuntimeError("Ultralytics YOLO could not load on this server.") from exc
+        YOLO = yolo_class
     selected = model_name or _yolo_model_name()
     if selected not in _YOLO_CACHE:
         _YOLO_CACHE[selected] = YOLO(selected)
