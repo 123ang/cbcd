@@ -8,17 +8,20 @@ from typing import Any, Dict, List, Optional, Tuple
 try:
     import cv2
     import numpy as np
-except ModuleNotFoundError:  # pragma: no cover - exercised when dependencies are missing.
+except (ImportError, RuntimeError):
     cv2 = None
     np = None
 
 os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(tempfile.gettempdir()) / "Ultralytics"))
 os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "matplotlib"))
 
-try:
-    from ultralytics import YOLO
-except ModuleNotFoundError:  # pragma: no cover - exercised when dependencies are missing.
-    YOLO = None
+YOLO = None
+# ponytail: skip YOLO when its OpenCV prerequisite failed; restore vision with compatible binaries.
+if cv2 is not None and np is not None:
+    try:
+        from ultralytics import YOLO
+    except (ImportError, RuntimeError):
+        pass
 
 HOG_MODEL_NAME = "opencv-hog-default-people-detector"
 DEFAULT_YOLO_MODEL = "yolov8n.pt"
@@ -32,7 +35,7 @@ _YOLO_CACHE: Dict[str, Any] = {}
 def _require_cv2():
     if cv2 is None or np is None:
         raise RuntimeError(
-            "OpenCV is not installed. Install backend requirements to enable real crowd detection."
+            "Camera vision is unavailable: OpenCV/NumPy could not load. Install builds compatible with the server CPU."
         )
 
 
