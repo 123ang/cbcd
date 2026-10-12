@@ -531,7 +531,7 @@ function App(){
       const context = canvas.getContext('2d');
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
-      await page.render({ canvasContext: context, viewport }).promise;
+      await page.render({ canvas, canvasContext: context, viewport }).promise;
       const dataUrl = canvas.toDataURL('image/png');
       const dims = await imageDimensions(dataUrl);
       patchFloorPlan({
@@ -545,7 +545,7 @@ function App(){
         rendered_width: dims.width,
         rendered_height: dims.height
       }, { clear: true, record: true });
-      await pdf.destroy();
+      await task.destroy();
       setActiveTab('floor');
       setNotice(`Rendered ${fileName}, page ${safePage} of ${pdf.numPages}.`);
     } catch(err){

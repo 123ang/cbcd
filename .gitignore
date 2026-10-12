@@ -26,3 +26,8 @@ ang_article/
 /Literature Review - Matrix 20260524.xlsx
 /1. GRA - Syafiq \[Shared\]-20260525T122622Z-3-001.zip
 /incoming/
+
+# Local frontend env (deploy.sh writes .env.production)
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
