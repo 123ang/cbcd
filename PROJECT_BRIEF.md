@@ -77,7 +77,7 @@ The VPS guide documents manual Nginx/systemd setup; [deploy.sh](deploy.sh) runs 
 
 ### Live (verified)
 
-- 2026-11-09 08:44 MYT: runtime checkout `~/server-runtime/projects/cbcd` fast-forwarded to `f516bc7` and the frontend dist rebuilt from it is live; `/`, `/floor`, the new bundle and `/api/health` returned 200 (checks 2026-11-09). Backend source unchanged since `46ef465`. PDF upload and vision sample buttons were not browser-tested and are likely broken for pre-existing reasons (nginx `.mjs` MIME type; missing `vision_samples/`).
+- 2026-11-09 08:44 MYT: runtime checkout `~/server-runtime/projects/cbcd` fast-forwarded to `f516bc7` and the frontend dist rebuilt from it is live; `/`, `/floor`, the new bundle and `/api/health` returned 200 (checks 2026-11-09). Backend source unchanged since `46ef465`. Same day: nginx `.mjs` MIME fixed and `vision_samples/` copied to the runtime; a PDF floor plan rendered in Chrome (pdf.js 6.4). `vision_samples/` is gitignored, so a fresh runtime checkout needs it copied again.
 - On 2026-10-24, Claude's facts recorded the local runtime container as running with source at `~/server-runtime/projects/cbcd`, revision `46ef465`, branch `main`. The same facts record an HTTPS 200 response from the public URL at 08:34 MYT. These observations do not establish that current HEAD `164f52b` is deployed or that routes, camera processing, or write flows work live (facts 2026-10-24).
 
 ### Built, not verified live
