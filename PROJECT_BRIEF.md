@@ -77,6 +77,7 @@ The VPS guide documents manual Nginx/systemd setup; [deploy.sh](deploy.sh) runs 
 
 ### Live (verified)
 
+- 2026-11-09 08:44 MYT: runtime checkout `~/server-runtime/projects/cbcd` fast-forwarded to `f516bc7` and the frontend dist rebuilt from it is live; `/`, `/floor`, the new bundle and `/api/health` returned 200 (checks 2026-11-09). Backend source unchanged since `46ef465`. PDF upload and vision sample buttons were not browser-tested and are likely broken for pre-existing reasons (nginx `.mjs` MIME type; missing `vision_samples/`).
 - On 2026-10-24, Claude's facts recorded the local runtime container as running with source at `~/server-runtime/projects/cbcd`, revision `46ef465`, branch `main`. The same facts record an HTTPS 200 response from the public URL at 08:34 MYT. These observations do not establish that current HEAD `164f52b` is deployed or that routes, camera processing, or write flows work live (facts 2026-10-24).
 
 ### Built, not verified live
@@ -98,7 +99,7 @@ The VPS guide documents manual Nginx/systemd setup; [deploy.sh](deploy.sh) runs 
 
 ### Known issues and unknowns
 
-- The deployed runtime revision `46ef465` is behind current repo HEAD `164f52b`; no deployment record ties the current source to the public URL (facts 2026-10-24).
+- Resolved 2026-11-09: the runtime now runs `f516bc7` (see Live). Earlier, runtime `46ef465` lagged repo HEAD.
 - The camera sample buttons request `/vision_samples/ultralytics_bus_people.jpg` and `/vision_samples/big_city_life_people.webm`, but `frontend/public/vision_samples/` is absent from the inspected checkout; `.gitignore` excludes that directory. Those sample buttons may fail here until the files are supplied ([frontend/src/main.jsx](frontend/src/main.jsx), [.gitignore](.gitignore)).
 - YOLO person detection, manually mapped coverage area, and density thresholds are prototype inputs. They do not establish accurate dense-crowd counting, automatic camera-to-floor-plan calibration, real-time CCTV streaming, or real-world evacuation safety ([docs/stage_d_iphone_computer_vision_plan.md](docs/stage_d_iphone_computer_vision_plan.md), [docs/phase1_academic_notes.md](docs/phase1_academic_notes.md)).
 - No tests or builds were run for this documentation task. Source presence and old checklist marks do not establish current passing tests; public HTTPS 200 is not a route or camera flow check.

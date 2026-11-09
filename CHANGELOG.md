@@ -11,6 +11,10 @@ Types: Added, Changed, Fixed, Removed, Security, Deployed, Decision, Docs.
 
 Nothing in progress.
 
+## 2026-11-09
+
+- **Deployed:** frontend `f516bc7` (pdf.js 5.7 → 6.4 RCE advisory fix, pinned deps) to cbcd.suntzutechnologies.com at 08:44 MYT: runtime checkout fast-forwarded 46ef465 → f516bc7, prebuilt dist swapped in (backend unchanged, API container not restarted); backup + rollback in `~/server-runtime/rollback/cbcd-dist-20261109-084429/`. checks: staged `npm ci` + `vite build`, `npm test` 5/5, `npm audit --omit=dev` 5 high → 0, live `/`, `/floor`, new JS bundle and `/api/health` 200. Not checked: PDF upload in a browser (live nginx serves `.mjs` as `application/octet-stream`, likely breaking the pdf.js module worker; pre-existing) and vision sample buttons (`frontend/public/vision_samples/` gitignored, missing on the server; pre-existing) (Claude; user-approved; staged by an Opus subagent).
+
 ## 2026-10-24
 
 - **Docs:** Added this changelog and rewrote the project brief from the current repository and `facts 2026-10-24`; recorded the stale brief revision and the mismatch between the Phase 2 checklist and Stage D source/docs (uncommitted; by Codex using Claude-collected facts; no tests, builds, installs, or runtime checks run).
